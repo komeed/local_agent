@@ -1,0 +1,16 @@
+{
+  "app": "TextEdit",
+  "bundle_id": "com.apple.TextEdit",
+  "pid": 4242,
+  "window_title": "Untitled",
+  "elements": [
+    {"id": 0, "role": "AXButton", "subrole": "AXCloseButton", "label": "close button", "frame": {"x": 10, "y": 40, "w": 14, "h": 16}, "actions": ["AXPress"], "path": "AXWindow:Untitled"},
+    {"id": 1, "role": "AXButton", "subrole": "AXMinimizeButton", "label": "minimize button", "frame": {"x": 30, "y": 40, "w": 14, "h": 16}, "actions": ["AXPress"], "path": "AXWindow:Untitled"},
+    {"id": 2, "role": "AXPopUpButton", "title": "Helvetica", "frame": {"x": 120, "y": 70, "w": 120, "h": 22}, "actions": ["AXPress"], "path": "AXWindow:Untitled > AXGroup"},
+    {"id": 3, "role": "AXCheckBox", "label": "Bold", "value": "0", "frame": {"x": 300, "y": 70, "w": 24, "h": 22}, "actions": ["AXPress"], "path": "AXWindow:Untitled > AXGroup"},
+    {"id": 4, "role": "AXTextArea", "value": "", "focused": true, "frame": {"x": 0, "y": 100, "w": 600, "h": 400}, "actions": [], "path": "AXWindow:Untitled > AXScrollArea"},
+    {"id": 5, "role": "AXMenuBarItem", "title": "File", "frame": {"x": 80, "y": 0, "w": 36, "h": 24}, "actions": ["AXPress", "AXCancel"], "path": "AXMenuBar"},
+    {"id": 6, "role": "AXMenuBarItem", "title": "Format", "frame": {"x": 160, "y": 0, "w": 56, "h": 24}, "actions": ["AXPress", "AXCancel"], "path": "AXMenuBar"},
+    {"id": 7, "role": "AXButton", "title": "Save", "enabled": false, "frame": {"x": 500, "y": 70, "w": 60, "h": 22}, "actions": ["AXPress"], "path": "AXWindow:Untitled > AXGroup"}
+  ]
+}

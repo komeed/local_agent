@@ -1,0 +1,42 @@
+[project]
+name = "local-agent"
+version = "0.1.0"
+description = "macOS desktop agent: local Qwen planner + OpenJev System-1 element selector"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "pyobjc-framework-ApplicationServices>=10.3",
+    "pyobjc-framework-Quartz>=10.3",
+    "pyobjc-framework-Cocoa>=10.3",
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "typer>=0.12",
+    "rich>=13.7",
+    "jevk5",
+]
+
+[project.scripts]
+local-agent = "local_agent.cli:app"
+
+[tool.uv.sources]
+jevk5 = { git = "https://github.com/allebee/jevk5", tag = "v0.3.3" }
+
+[tool.uv]
+# jevk5's llama.cpp client (jevk5.gguf) is stdlib-only; drop the CUDA runtime's heavy deps.
+override-dependencies = [
+    "torch; sys_platform == 'never'",
+    "transformers; sys_platform == 'never'",
+    "accelerate; sys_platform == 'never'",
+    "huggingface-hub; sys_platform == 'never'",
+    "numpy; sys_platform == 'never'",
+    "jinja2; sys_platform == 'never'",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["local_agent"]
