@@ -1,0 +1,672 @@
+{
+ "app": "TextEdit",
+ "bundle_id": "com.apple.TextEdit",
+ "pid": 0,
+ "window_title": "Untitled",
+ "elements": [
+  {
+   "id": 0,
+   "role": "AXTextArea",
+   "subrole": "",
+   "title": "",
+   "label": "",
+   "value": "Hello world",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": true,
+   "frame": {
+    "x": 152.0,
+    "y": 105.0,
+    "w": 656.0,
+    "h": 384.0
+   },
+   "actions": [
+    "AXShowMenu"
+   ],
+   "path": "AXWindow:Untitled > AXScrollArea",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 1,
+   "role": "AXButton",
+   "subrole": "AXCloseButton",
+   "title": "",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 160.0,
+    "y": 81.0,
+    "w": 16.0,
+    "h": 16.0
+   },
+   "actions": [
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 2,
+   "role": "AXButton",
+   "subrole": "AXFullScreenButton",
+   "title": "",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "this button also has an action to zoom the window",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 206.0,
+    "y": 81.0,
+    "w": 16.0,
+    "h": 16.0
+   },
+   "actions": [
+    "AXPress",
+    "AXZoomWindow",
+    "AXShowMenu"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 3,
+   "role": "AXButton",
+   "subrole": "AXMinimizeButton",
+   "title": "",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 183.0,
+    "y": 81.0,
+    "w": 16.0,
+    "h": 16.0
+   },
+   "actions": [
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 4,
+   "role": "AXMenuButton",
+   "subrole": "",
+   "title": "",
+   "label": "document actions",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": false,
+   "focused": false,
+   "frame": {
+    "x": 289.0,
+    "y": 80.0,
+    "w": 12.0,
+    "h": 18.0
+   },
+   "actions": [
+    "AXPress",
+    "AXShowMenu"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 5,
+   "role": "AXStaticText",
+   "subrole": "",
+   "title": "",
+   "label": "",
+   "value": "Untitled",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 234.0,
+    "y": 81.0,
+    "w": 56.0,
+    "h": 16.0
+   },
+   "actions": [],
+   "path": "AXWindow:Untitled",
+   "interactive": false,
+   "submenu": false
+  },
+  {
+   "id": 6,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "Apple",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 10.0,
+    "y": 0.0,
+    "w": 34.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 7,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "TextEdit",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 44.0,
+    "y": 0.0,
+    "w": 73.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 8,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "File",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 117.0,
+    "y": 0.0,
+    "w": 42.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 9,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "Edit",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 159.0,
+    "y": 0.0,
+    "w": 44.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 10,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "Format",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 203.0,
+    "y": 0.0,
+    "w": 63.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 11,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "View",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 266.0,
+    "y": 0.0,
+    "w": 50.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 12,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "Window",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 316.0,
+    "y": 0.0,
+    "w": 69.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 13,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "Help",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 385.0,
+    "y": 0.0,
+    "w": 48.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 14,
+   "role": "AXMenuItem",
+   "subrole": "",
+   "title": "Font",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 199.0,
+    "y": 39.0,
+    "w": 243.0,
+    "h": 24.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar > AXMenuBarItem:Format > AXMenu",
+   "interactive": true,
+   "submenu": true
+  },
+  {
+   "id": 15,
+   "role": "AXMenuItem",
+   "subrole": "",
+   "title": "Text",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 199.0,
+    "y": 63.0,
+    "w": 243.0,
+    "h": 24.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar > AXMenuBarItem:Format > AXMenu",
+   "interactive": true,
+   "submenu": true
+  },
+  {
+   "id": 16,
+   "role": "AXMenuItem",
+   "subrole": "",
+   "title": "",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": false,
+   "focused": false,
+   "frame": {
+    "x": 199.0,
+    "y": 87.0,
+    "w": 243.0,
+    "h": 11.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar > AXMenuBarItem:Format > AXMenu",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 17,
+   "role": "AXMenuItem",
+   "subrole": "",
+   "title": "Make Rich Text",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 199.0,
+    "y": 98.0,
+    "w": 243.0,
+    "h": 24.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar > AXMenuBarItem:Format > AXMenu",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 18,
+   "role": "AXMenuItem",
+   "subrole": "",
+   "title": "Prevent Editing",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 199.0,
+    "y": 122.0,
+    "w": 243.0,
+    "h": 24.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar > AXMenuBarItem:Format > AXMenu",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 19,
+   "role": "AXMenuItem",
+   "subrole": "",
+   "title": "Wrap to Page",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 199.0,
+    "y": 146.0,
+    "w": 243.0,
+    "h": 24.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar > AXMenuBarItem:Format > AXMenu",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 20,
+   "role": "AXMenuItem",
+   "subrole": "",
+   "title": "Allow Hyphenation",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 199.0,
+    "y": 170.0,
+    "w": 243.0,
+    "h": 24.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar > AXMenuBarItem:Format > AXMenu",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 21,
+   "role": "AXMenuItem",
+   "subrole": "",
+   "title": "Make Layout Vertical",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 199.0,
+    "y": 194.0,
+    "w": 243.0,
+    "h": 24.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar > AXMenuBarItem:Format > AXMenu",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 22,
+   "role": "AXMenuItem",
+   "subrole": "",
+   "title": "",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": false,
+   "focused": false,
+   "frame": {
+    "x": 199.0,
+    "y": 218.0,
+    "w": 243.0,
+    "h": 11.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar > AXMenuBarItem:Format > AXMenu",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 23,
+   "role": "AXMenuItem",
+   "subrole": "",
+   "title": "List…",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": false,
+   "focused": false,
+   "frame": {
+    "x": 199.0,
+    "y": 229.0,
+    "w": 243.0,
+    "h": 24.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar > AXMenuBarItem:Format > AXMenu",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 24,
+   "role": "AXMenuItem",
+   "subrole": "",
+   "title": "Table…",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": false,
+   "focused": false,
+   "frame": {
+    "x": 199.0,
+    "y": 253.0,
+    "w": 243.0,
+    "h": 24.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar > AXMenuBarItem:Format > AXMenu",
+   "interactive": true,
+   "submenu": false
+  }
+ ]
+}

@@ -56,6 +56,7 @@ INTERACTIVE_ROLES = {
 }
 INTERACTIVE_ACTIONS = {"AXPress", "AXConfirm", "AXPick", "AXIncrement", "AXOpen"}
 TEXT_ROLES = {"AXTextField", "AXTextArea", "AXSearchField", "AXComboBox"}
+DISPLAY_TEXT_ROLES = {"AXStaticText", "AXHeading"}
 
 
 class AccessibilityError(RuntimeError):
@@ -95,20 +96,41 @@ def _actions(el) -> list[str]:
     return list(names) if err == 0 and names else []
 
 
+def _child_text(el, limit: int = 4) -> str:
+    """Name of an unlabeled row/cell/button from its first text children (e.g. Finder file names)."""
+    parts = []
+    for child in (_attr(el, "AXChildren") or [])[:limit]:
+        if _str(_attr(child, "AXRole")) in DISPLAY_TEXT_ROLES | {"AXTextField"}:
+            text = _str(_attr(child, "AXValue")) or _str(_attr(child, "AXTitle"))
+            if text:
+                parts.append(text)
+    return " ".join(parts)[:120]
+
+
 def _to_element(el, idx: int, role: str, path: str) -> UIElement | None:
     actions = _actions(el)
-    if role not in INTERACTIVE_ROLES and not (INTERACTIVE_ACTIONS & set(actions)):
+    interactive = role in INTERACTIVE_ROLES or bool(INTERACTIVE_ACTIONS & set(actions))
+    if not interactive and role not in DISPLAY_TEXT_ROLES:
         return None
     frame = _frame(el)
     if frame is not None and (frame.w <= 1 or frame.h <= 1):
         return None  # hidden / collapsed
+    if not interactive:
+        # Visible text for the planner's screen view (labels, dialog messages, headings); never a Jev candidate.
+        text = _str(_attr(el, "AXValue")) or _str(_attr(el, "AXTitle")) or _str(_attr(el, "AXDescription"))
+        if not text:
+            return None
+        return UIElement(id=idx, role=role, value=text, frame=frame, path=path, interactive=False, ref=el)
     enabled = _attr(el, "AXEnabled")
+    title, label = _str(_attr(el, "AXTitle")), _str(_attr(el, "AXDescription"))
+    if not (title or label) and role not in TEXT_ROLES:
+        label = _child_text(el)
     return UIElement(
         id=idx,
         role=role,
         subrole=_str(_attr(el, "AXSubrole")),
-        title=_str(_attr(el, "AXTitle")),
-        label=_str(_attr(el, "AXDescription")),
+        title=title,
+        label=label,
         value=_str(_attr(el, "AXValue")),
         placeholder=_str(_attr(el, "AXPlaceholderValue")),
         help=_str(_attr(el, "AXHelp")),
@@ -118,6 +140,7 @@ def _to_element(el, idx: int, role: str, path: str) -> UIElement | None:
         frame=frame,
         actions=actions,
         path=path,
+        submenu=role == "AXMenuItem" and bool(_attr(el, "AXChildren")),
         ref=el,
     )
 
@@ -212,7 +235,7 @@ def snapshot(settings: Settings | None = None, include_menubar: bool = True) -> 
     window_title = ""
     if window is not None:
         window_title = _str(_attr(window, "AXTitle"))
-        _walk(window, f"AXWindow:{window_title}", settings, elements, deadline)
+        _walk(window, "", settings, elements, deadline)
 
     # Open context/popup menus hang off the application element, not the window.
     for child in _attr(app_el, "AXChildren") or []:

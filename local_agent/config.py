@@ -9,10 +9,27 @@ from dataclasses import dataclass, fields
 JEV_MAX_CHOICES = 255
 
 
+def _parse(raw: str, kind: type):
+    if kind is bool:  # bool("false") is True
+        return raw.strip().lower() in ("1", "true", "yes", "on")
+    return kind(raw)
+
+
 @dataclass
 class Settings:
     ollama_url: str = "http://127.0.0.1:11434"
-    planner_model: str = "qwen2.5-coder:7b"
+    planner_model: str = "qwen3.5:9b"  # won evals/planner_eval.py: 94% vs 82% (qwen2.5-coder:7b), 71% (qwen3.5:4b)
+    # Qwen3.5-style "thinking" adds seconds per step; plans are short, so it's off by default.
+    planner_think: bool = False
+    planner_mode: str = "json"  # "json" (one free-form step) | "choice" (kind, then details; for small models)
+    # Planner prompts are ~1k tokens; Ollama otherwise reserves KV cache for the model's full context
+    # (262k for Qwen3.5), which more than doubles its memory.
+    planner_num_ctx: int = 8192
+    # Text view of the screen for the planner (observe/screen_view.py): "ids" numbers each control so the planner can
+    # answer with target.id; "names" lists controls without numbers (Jev picks every element); "off" sends only
+    # Snapshot.scope(). Capped at planner_view_tokens and to what fits in planner_num_ctx.
+    planner_view: str = "ids"
+    planner_view_tokens: int = 3000
     # "jevk5": JevK5 4B GGUF read through llama-server (default, ~5 GB). "openjev": an OpenJev /v1/systemone server.
     jev_backend: str = "jevk5"
     jevk5_url: str = "http://127.0.0.1:8091"
@@ -47,7 +64,7 @@ class Settings:
         for f in fields(cls):
             raw = os.environ.get(f"LOCAL_AGENT_{f.name.upper()}")
             if raw is not None:
-                setattr(s, f.name, type(getattr(s, f.name))(raw))
+                setattr(s, f.name, _parse(raw, type(getattr(s, f.name))))
         for k, v in overrides.items():
             if v is not None:
                 setattr(s, k, v)

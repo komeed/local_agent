@@ -13,11 +13,14 @@ from local_agent.history import StepRecord
 from local_agent.observe.models import Snapshot, UIElement
 from local_agent.planner.qwen import PlannerError
 from local_agent.planner.schema import PlannerOutput
-from local_agent.selector.jev import JevError, Selection
+from local_agent.observe.screen_view import render, view_budget
+from local_agent.selector.jev import JevError, Selection, pick_by_id
 
 
 class Planner(Protocol):
-    def next_step(self, goal: str, scope: dict, history: list[StepRecord]) -> PlannerOutput: ...
+    def next_step(
+        self, goal: str, scope: dict, history: list[StepRecord], screen: str | None = None
+    ) -> PlannerOutput: ...
 
 
 class Selector(Protocol):
@@ -86,8 +89,12 @@ class Agent:
         self, n: int, goal: str, snap: Snapshot, history: list[StepRecord]
     ) -> tuple[StepRecord | None, Snapshot | None]:
         """Run one iteration. Returns (record, snapshot to reuse next time) or (None, _) when done."""
+        screen = None
+        if self.s.planner_view in ("ids", "names"):
+            budget = view_budget(self.s.planner_num_ctx, self.s.planner_view_tokens)
+            screen = render(snap, budget, numbered=self.s.planner_view == "ids")
         try:
-            plan = self.planner.next_step(goal, snap.scope(), history)
+            plan = self.planner.next_step(goal, snap.scope(), history, screen)
         except (PlannerError, httpx.HTTPError) as e:
             return StepRecord(n, "planner error", note=str(e)[:300]), snap
         self.hooks.on_plan(n, snap, plan)
@@ -110,14 +117,20 @@ class Agent:
 
         element = None
         if plan.needs_jev():
+            sel = pick_by_id(snap, plan)
+            if sel is None and plan.target is not None and not plan.target.description.strip():
+                rec.note = f"element [{plan.target.id}] is not on the current screen; use a number from SCREEN"
+                return rec, snap
             try:
-                sel = self.selector.select(goal, snap, plan)
+                sel = sel or self.selector.select(goal, snap, plan)
             except (JevError, httpx.HTTPError) as e:
                 rec.note = f"selector error: {e}"[:300]
                 return rec, snap
             self.hooks.on_select(sel)
             element = sel.element
             rec.element, rec.probability, rec.confidence = element.describe(), sel.probability, sel.confidence
+            if sel.source == "planner":
+                rec.note = "picked by number from the screen view"
             if sel.probability < self.s.threshold:
                 rec.note = (
                     f"skipped: best match probability {sel.probability:.2f} below threshold {self.s.threshold:.2f} "

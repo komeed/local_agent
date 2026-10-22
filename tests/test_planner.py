@@ -34,7 +34,7 @@ def test_valid_output_parsed(textedit):
     step = planner.next_step("open textedit", textedit.scope(), [])
     assert step.command == "open -a TextEdit"
     assert calls[0]["format"]["title"] == "PlannerOutput"
-    assert calls[0]["model"] == "qwen2.5-coder:7b"
+    assert calls[0]["model"] == Settings().planner_model
 
 
 def test_repairs_once(textedit):
@@ -63,3 +63,22 @@ def test_warns_after_repeated_identical_failures(textedit):
     assert "last 2 steps" in warned["warning"]
     other = StepRecord(2, "shortcut keys=cmd+a", executed=True, verified=False)
     assert "warning" not in json.loads(build_messages("g", textedit.scope(), [fail, other])[1]["content"])
+
+
+def test_falls_back_when_structured_output_unavailable(textedit):
+    calls = []
+
+    def handler(request):
+        body = json.loads(request.content)
+        calls.append(body)
+        if "format" in body:
+            return httpx.Response(501, json={"error": "structured output is unavailable"})
+        reply = 'Sure:\n```json\n{"done": false, "reasoning": "r", "action": "shortcut", "keys": "cmd+a"}\n```'
+        return httpx.Response(200, json={"message": {"content": reply}})
+
+    client = httpx.Client(base_url="http://ollama", transport=httpx.MockTransport(handler))
+    planner = QwenPlanner(Settings(), client=client)
+    assert planner.next_step("select all", textedit.scope(), []).keys == "cmd+a"
+    assert planner.next_step("select all", textedit.scope(), []).keys == "cmd+a"
+    assert [("format" in c) for c in calls] == [True, False, False]  # remembers after the first 501
+    assert "JSON schema" in calls[1]["messages"][1]["content"]

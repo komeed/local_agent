@@ -12,11 +12,19 @@ ELEMENT_ACTIONS = {"click", "double_click", "right_click"}
 
 
 class Target(BaseModel):
-    role: str = Field(
-        description="AX role of the element to act on, e.g. AXButton, AXTextField, AXMenuItem, AXLink, AXCell. "
-        "Use 'any' if unsure."
+    id: int | None = Field(
+        default=None, description="The element's [number] from the screen view, when it is listed there."
     )
-    description: str = Field(description="What the element is, in plain words, e.g. 'Send button in the toolbar'.")
+    role: str = Field(
+        default="any",
+        description="AX role of the element to act on, e.g. AXButton, AXTextField, AXMenuItem, AXLink, AXCell. "
+        "Use 'any' if unsure.",
+    )
+    description: str = Field(
+        default="",
+        description="What the element is, in plain words, e.g. 'Send button in the toolbar'. "
+        "Required when id is not given.",
+    )
 
 
 class PlannerOutput(BaseModel):
@@ -48,6 +56,8 @@ class PlannerOutput(BaseModel):
             raise ValueError("action 'shortcut' requires 'keys'")
         if self.action in ELEMENT_ACTIONS and self.target is None:
             raise ValueError(f"action '{self.action}' requires 'target'")
+        if self.target is not None and self.target.id is None and not self.target.description.strip():
+            raise ValueError("target needs an 'id' from the screen view or a 'description'")
         if self.action == "scroll" and self.direction is None:
             self.direction = "down"
         return self
@@ -64,7 +74,10 @@ class PlannerOutput(BaseModel):
             return "done"
         bits = [self.action or ""]
         if self.target:
-            bits.append(f"[{self.target.role}] {self.target.description}")
+            if self.target.id is not None:
+                bits.append(f"[{self.target.id}]")
+            if self.target.description or self.target.id is None:
+                bits.append(f"[{self.target.role}] {self.target.description}")
         if self.text:
             bits.append(f"text={self.text!r}")
         if self.keys:

@@ -47,6 +47,18 @@ class Selection:
     confidence: float
     candidates: int
     rounds: int
+    source: str = "jev"  # "planner" when the planner named the element by its screen-view number
+
+
+def pick_by_id(snap: Snapshot, step: PlannerOutput) -> Selection | None:
+    """The element the planner named by [number], if it exists and suits the action; None means ask Jev."""
+    t = step.target
+    if t is None or t.id is None:
+        return None
+    el = next((e for e in snap.elements if e.id == t.id), None)
+    if el is None or (step.action == "type" and el.role not in TEXT_ROLES):
+        return None
+    return Selection(el, 1.0, 1.0, 1, 0, source="planner")
 
 
 def _role_matches(wanted: str, role: str) -> bool:
@@ -56,7 +68,7 @@ def _role_matches(wanted: str, role: str) -> bool:
 
 
 def filter_candidates(elements: list[UIElement], step: PlannerOutput) -> list[UIElement]:
-    enabled = [e for e in elements if e.enabled]
+    enabled = [e for e in elements if e.enabled and e.interactive]
     wanted = (step.target.role if step.target else "any").strip()
     if step.action == "type":
         pool = [e for e in enabled if e.role in TEXT_ROLES]

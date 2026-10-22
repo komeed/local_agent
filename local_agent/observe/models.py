@@ -39,6 +39,10 @@ class UIElement:
     actions: list[str] = field(default_factory=list)
     # Ancestor roles/titles, e.g. "AXWindow:Inbox > AXGroup > AXToolbar".
     path: str = ""
+    # False for visible text (AXStaticText/AXHeading) kept only for the planner's screen view.
+    interactive: bool = True
+    # AXMenuItem that opens a submenu (e.g. Format > Font).
+    submenu: bool = False
     # Live AXUIElementRef; never serialized.
     ref: Any = field(default=None, repr=False, compare=False)
 
@@ -98,7 +102,7 @@ class Snapshot:
 
     def scope(self) -> dict:
         """Compact summary given to the planner instead of the full element list."""
-        counts = Counter(e.role for e in self.elements)
+        counts = Counter(e.role for e in self.elements if e.interactive)
         focused = next((e for e in self.elements if e.focused), None)
         scope = {
             "app": self.app,

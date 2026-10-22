@@ -11,13 +11,14 @@ uv run pytest tests/test_jev.py::test_tournament_600 -q   # single test
 uv run local-agent doctor                 # check AX permission, Ollama model, Jev backend
 uv run local-agent snapshot --app TextEdit -o snapshot.json
 uv run local-agent run "<goal>" --app TextEdit --dry-run
+uv run python -m evals.planner_eval qwen3.5:9b qwen2.5-coder:7b   # compare planner models (needs Ollama + models)
 ```
 
-Runtime dependencies are external services: Ollama at `127.0.0.1:11434` (`qwen2.5-coder:7b`) and, for the default
+Runtime dependencies are external services: Ollama at `127.0.0.1:11434` (`qwen3.5:9b`) and, for the default
 `jevk5` backend, `llama-server -m ~/models/jevk5/jevk5-4b-v0.3-Q8_0.gguf -c 8192 -ngl 99 --parallel 1 --cache-ram 0 --port 8091`. The optional
 `openjev` backend is an OpenJev server at `127.0.0.1:8080`. Tests fake all of them and need none.
 
-Memory budget matters (24 GB Mac): Qwen 7B + JevK5 4B Q8_0 is ~10 GB and keeps memory pressure green, but only with
+Memory budget matters (24 GB Mac): Qwen3.5 9B + JevK5 4B Q8_0 keeps memory pressure green (~40% free), but only with
 `--parallel 1 --cache-ram 0` (llama-server's default slots + 8 GB prompt cache reached ~9 GB on their own). OpenJev's DiffusionGemma 26B (~16–24 GB) caused
 memory pressure, which is why JevK5 is the default.
 
@@ -29,12 +30,31 @@ only its stdlib llama.cpp client (`jevk5.gguf.JevK5GGUF`) is used. Don't import 
 macOS-only agent loop in `local_agent/loop.py` (`Agent.run`): observe → plan → select → act → verify, repeated until
 the planner returns `done`, `max_steps`, or `max_consecutive_failures`.
 
-- **Token split is the core design.** The planner (`planner/qwen.py`) gets only `Snapshot.scope()` (app, window,
-  role counts, focused element) plus recent `StepRecord.for_planner()` history — never the element list. The full
-  element list goes only to Jev (`selector/jev.py`). Keep it that way when changing prompts.
-- **Planner contract** is `planner/schema.py::PlannerOutput`, passed to Ollama as a JSON schema (`format=`). Its
-  validator enforces per-action required fields (e.g. `terminal` needs `command`); `needs_jev()` decides whether a
-  step goes through element selection. Invalid output gets one repair round-trip.
+- **Token split is the core design.** The planner (`planner/qwen.py`) never gets the element JSON. It gets
+  `Snapshot.scope()` (app, window, role counts, focused element, open menu items), recent `StepRecord.for_planner()`
+  history, and — unless `planner_view="off"` — a **screen view** (`observe/screen_view.py`): plain text lines per
+  control/visible text, grouped by area (focused, dialog, open menus, window, toolbar, lists, menu bar), long lists
+  collapsed to 12 + a count, cut to `view_budget(num_ctx, planner_view_tokens)` (~3.5k tokens reserved for the rest
+  of the prompt). `planner_view="ids"` numbers controls so the planner can answer `target.id`; `"names"` omits numbers
+  and Jev picks every element. The full element list still goes only to Jev.
+- **Element selection** in `Agent._step`: `pick_by_id` uses the planner's `target.id` when that element exists (and
+  is a text field for `type`); otherwise Jev picks from `target.description`. An unknown id with no description fails
+  the step with a note. Non-interactive text elements (`UIElement.interactive=False`, AXStaticText/AXHeading) appear in
+  the view but are never Jev candidates.
+- **Planner contract** is `planner/schema.py::PlannerOutput`, passed to Ollama as a JSON schema (`format=`). Ollama's
+  MLX engine for Qwen3.5 answers 501 "structured output is unavailable", so `QwenPlanner` then puts the schema in a
+  system message and pulls the JSON out of the reply (`extract_json`). Its validator enforces per-action required
+  fields (e.g. `terminal` needs `command`); `needs_jev()` decides whether a step goes through element selection.
+  Invalid output gets one repair round-trip. Thinking is off and `num_ctx` is 8192, or Qwen3.5 reserves KV for 262k.
+- **Planner evals**: `evals/planner_cases.py` holds cases on real TextEdit snapshots (`evals/fixtures/`, recorded by
+  `uv run python -m evals.capture_fixtures`, which drives TextEdit) plus synthetic ones (error sheet, find bar,
+  300-file Finder). Checks take `(plan, snapshot)` and resolve `target.id`. `tests/test_planner_cases.py` pins each
+  check against ideal answers, number picks and live mistakes. Change the planner prompt, view or model → rerun
+  `uv run python -m evals.planner_eval <models> --views off,names,ids`.
+- **`planner_mode="choice"`** (`planner/choice.py`, opt-in): `ChoicePlanner` asks the kind of step first (ordered
+  checklist + worked examples, enum-constrained), then one detail question appended to the same conversation so
+  Ollama reuses the cached prefix; click targets are chosen by name-first labels parsed from the screen view, not
+  numbers. Same `PlannerOutput` out. It scored below the default JSON planner for 3B/7B/9B (see README).
 - **Jev backends** share TypeSafe's `/v1/systemone` question/answer shapes. `make_selector()` picks `JevK5Client`
   (default; calls `JevK5GGUF.decide` per question against llama-server) or `JevClient` (OpenJev over HTTP). Both
   inherit `select`/`verify`, which only go through `system_one()`.

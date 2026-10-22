@@ -14,18 +14,21 @@ class Outcome:
 
 class ScriptedPlanner:
     def __init__(self, steps):
-        self.steps, self.seen = list(steps), []
+        self.steps, self.seen, self.screens = list(steps), [], []
 
-    def next_step(self, goal, scope, history):
+    def next_step(self, goal, scope, history, screen=None):
         self.seen.append(list(history))
+        self.screens.append(screen)
         return self.steps.pop(0)
 
 
 class FakeSelector:
     def __init__(self, prob=0.9, verify=0.9):
         self.prob, self.verify_p = prob, verify
+        self.selects = 0
 
     def select(self, goal, snap, step):
+        self.selects += 1
         return Selection(snap.elements[5], self.prob, self.prob, len(snap.elements), 1)
 
     def verify(self, goal, step, element, before, after):
@@ -103,3 +106,36 @@ def test_max_steps(textedit):
     agent, _, executed, _ = make(textedit, steps, max_steps=4)
     result = agent.run("g")
     assert not result.success and "max steps" in result.reason and len(executed) == 4
+
+
+def test_planner_number_pick_skips_jev(textedit):
+    selector = FakeSelector()
+    steps = [P(action="click", target={"id": 3}), DONE]
+    agent, planner, executed, _ = make(textedit, steps, selector=selector)
+    assert agent.run("toggle bold").success
+    assert selector.selects == 0 and executed[0][1].label == "Bold"
+    assert "[3]" in planner.screens[0] and 'checkbox "Bold"' in planner.screens[0]
+
+
+def test_unknown_number_without_description_fails(textedit):
+    steps = [P(action="click", target={"id": 999})] * 3
+    agent, _, executed, _ = make(textedit, steps)
+    result = agent.run("g")
+    assert executed == [] and "not on the current screen" in result.history[0].note
+
+
+def test_unknown_number_with_description_falls_back_to_jev(textedit):
+    selector = FakeSelector()
+    steps = [P(action="click", target={"id": 999, "role": "AXMenuBarItem", "description": "File"}), DONE]
+    agent, _, executed, _ = make(textedit, steps, selector=selector)
+    assert agent.run("g").success and selector.selects == 1
+
+
+def test_view_modes(textedit):
+    for mode, has_numbers in (("ids", True), ("names", False)):
+        agent, planner, _, _ = make(textedit, [DONE], planner_view=mode)
+        agent.run("g")
+        assert ("[3]" in planner.screens[0]) is has_numbers and "Bold" in planner.screens[0]
+    agent, planner, _, _ = make(textedit, [DONE], planner_view="off")
+    agent.run("g")
+    assert planner.screens == [None]

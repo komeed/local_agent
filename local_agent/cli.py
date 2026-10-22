@@ -94,17 +94,22 @@ def run(
     yes: bool = typer.Option(False, "--yes", "-y", help="Run terminal commands without asking."),
     threshold: float | None = typer.Option(None, help="Min Jev probability to act on a chosen element."),
     max_steps: int | None = typer.Option(None, help="Stop after this many steps."),
-    model: str | None = typer.Option(None, help="Ollama planner model (default qwen2.5-coder:7b)."),
+    model: str | None = typer.Option(None, help="Ollama planner model (default qwen3.5:9b)."),
+    view: str | None = typer.Option(None, help="Planner screen view: ids (numbered, default), names, or off."),
+    planner: str | None = typer.Option(
+        None, help="Planner mode: json (one free-form step, default) or choice (multiple choice; for small models)."
+    ),
     log: Path | None = typer.Option(None, "--log", help="Write the step history as JSON here."),
 ):
     """Work toward GOAL on the frontmost window until done or out of steps."""
     from local_agent.act import executor
     from local_agent.loop import Agent, Hooks
     from local_agent.observe.ax_tree import snapshot as take_snapshot
-    from local_agent.planner.qwen import QwenPlanner
+    from local_agent.planner.qwen import make_planner
     from local_agent.selector.jev import make_selector
 
-    s = Settings.from_env(threshold=threshold, max_steps=max_steps, planner_model=model)
+    s = Settings.from_env(threshold=threshold, max_steps=max_steps, planner_model=model, planner_view=view,
+                          planner_mode=planner)
 
     def confirm(cmd: str) -> bool:
         if yes:
@@ -119,6 +124,9 @@ def run(
         console.print(f"[cyan]plan[/cyan] {plan.summary()}  [dim]{plan.reasoning}[/dim]")
 
     def on_select(sel):
+        if sel.source == "planner":
+            console.print(f"[magenta]pick[/magenta] [{sel.element.id}] {sel.element.describe()}  [dim](by number)[/dim]")
+            return
         console.print(
             f"[magenta]jev[/magenta] {sel.element.describe()}  p={sel.probability:.2f} conf={sel.confidence:.2f} "
             f"[dim]({sel.candidates} candidates, {sel.rounds} round{'s' if sel.rounds > 1 else ''})[/dim]"
@@ -143,7 +151,7 @@ def run(
         on_select=on_select,
         on_record=on_record,
     )
-    agent = Agent(s, QwenPlanner(s), make_selector(s), hooks, dry_run=dry_run)
+    agent = Agent(s, make_planner(s), make_selector(s), hooks, dry_run=dry_run)
     _prepare(app_name, delay)
     result = agent.run(goal)
 

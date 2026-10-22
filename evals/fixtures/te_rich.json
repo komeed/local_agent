@@ -1,0 +1,907 @@
+{
+ "app": "TextEdit",
+ "bundle_id": "com.apple.TextEdit",
+ "pid": 0,
+ "window_title": "Untitled",
+ "elements": [
+  {
+   "id": 0,
+   "role": "AXTextArea",
+   "subrole": "",
+   "title": "",
+   "label": "",
+   "value": "Hello world",
+   "placeholder": "",
+   "help": "",
+   "selected": "Hello world",
+   "enabled": true,
+   "focused": true,
+   "frame": {
+    "x": 152.0,
+    "y": 173.0,
+    "w": 656.0,
+    "h": 316.0
+   },
+   "actions": [
+    "AXShowMenu"
+   ],
+   "path": "AXWindow:Untitled > AXScrollArea",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 1,
+   "role": "AXRuler",
+   "subrole": "",
+   "title": "",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 152.0,
+    "y": 141.0,
+    "w": 673.0,
+    "h": 32.0
+   },
+   "actions": [
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled > AXScrollArea",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 2,
+   "role": "AXMenuButton",
+   "subrole": "",
+   "title": "",
+   "label": "paragraph style",
+   "value": "",
+   "placeholder": "",
+   "help": "Choose a paragraph style",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 159.0,
+    "y": 112.0,
+    "w": 48.0,
+    "h": 22.0
+   },
+   "actions": [
+    "AXShowMenu",
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 3,
+   "role": "AXCheckBox",
+   "subrole": "AXSegment",
+   "title": "",
+   "label": "bold",
+   "value": "0",
+   "placeholder": "",
+   "help": "Bold text",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 211.0,
+    "y": 113.0,
+    "w": 20.0,
+    "h": 20.0
+   },
+   "actions": [
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled > AXGroup",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 4,
+   "role": "AXCheckBox",
+   "subrole": "AXSegment",
+   "title": "",
+   "label": "italic",
+   "value": "0",
+   "placeholder": "",
+   "help": "Italicize text",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 232.0,
+    "y": 113.0,
+    "w": 20.0,
+    "h": 20.0
+   },
+   "actions": [
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled > AXGroup",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 5,
+   "role": "AXCheckBox",
+   "subrole": "AXSegment",
+   "title": "",
+   "label": "underline",
+   "value": "0",
+   "placeholder": "",
+   "help": "Underline text",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 253.0,
+    "y": 113.0,
+    "w": 20.0,
+    "h": 20.0
+   },
+   "actions": [
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled > AXGroup",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 6,
+   "role": "AXCheckBox",
+   "subrole": "AXSegment",
+   "title": "",
+   "label": "strikethrough",
+   "value": "0",
+   "placeholder": "",
+   "help": "Strikethrough text",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 274.0,
+    "y": 113.0,
+    "w": 20.0,
+    "h": 20.0
+   },
+   "actions": [
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled > AXGroup",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 7,
+   "role": "AXColorWell",
+   "subrole": "",
+   "title": "",
+   "label": "text color",
+   "value": "rgb 1 1 1 1",
+   "placeholder": "",
+   "help": "Click to choose the text color",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 298.0,
+    "y": 112.0,
+    "w": 22.0,
+    "h": 22.0
+   },
+   "actions": [
+    "AXPress",
+    "Name:Show color panel\nTarget:0x0\nSelector:(null)"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 8,
+   "role": "AXColorWell",
+   "subrole": "",
+   "title": "",
+   "label": "text background color",
+   "value": "rgb 0.117647 0.117647 0.117647 1",
+   "placeholder": "",
+   "help": "Click to choose the text background color",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 323.0,
+    "y": 112.0,
+    "w": 22.0,
+    "h": 22.0
+   },
+   "actions": [
+    "AXPress",
+    "Name:Show color panel\nTarget:0x0\nSelector:(null)"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 9,
+   "role": "AXPopUpButton",
+   "subrole": "",
+   "title": "",
+   "label": "typeface",
+   "value": "Helvetica",
+   "placeholder": "",
+   "help": "Choose the typeface",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 348.0,
+    "y": 112.0,
+    "w": 82.0,
+    "h": 22.0
+   },
+   "actions": [
+    "AXShowMenu",
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 10,
+   "role": "AXPopUpButton",
+   "subrole": "",
+   "title": "",
+   "label": "style",
+   "value": "Regular",
+   "placeholder": "",
+   "help": "Choose the style",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 433.0,
+    "y": 112.0,
+    "w": 82.0,
+    "h": 22.0
+   },
+   "actions": [
+    "AXShowMenu",
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 11,
+   "role": "AXComboBox",
+   "subrole": "",
+   "title": "",
+   "label": "font size",
+   "value": "12",
+   "placeholder": "",
+   "help": "Set the font size",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 518.0,
+    "y": 112.0,
+    "w": 52.0,
+    "h": 22.0
+   },
+   "actions": [
+    "AXShowMenu",
+    "AXConfirm"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 12,
+   "role": "AXButton",
+   "subrole": "",
+   "title": "",
+   "label": "font size",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 546.5,
+    "y": 116.0,
+    "w": 19.5,
+    "h": 13.5
+   },
+   "actions": [
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled > AXComboBox:font size",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 13,
+   "role": "AXCheckBox",
+   "subrole": "AXSegment",
+   "title": "",
+   "label": "align left",
+   "value": "1",
+   "placeholder": "",
+   "help": "Align text to left",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 574.0,
+    "y": 113.0,
+    "w": 20.0,
+    "h": 20.0
+   },
+   "actions": [
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled > AXGroup",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 14,
+   "role": "AXCheckBox",
+   "subrole": "AXSegment",
+   "title": "",
+   "label": "align center",
+   "value": "0",
+   "placeholder": "",
+   "help": "Center text",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 595.0,
+    "y": 113.0,
+    "w": 20.0,
+    "h": 20.0
+   },
+   "actions": [
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled > AXGroup",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 15,
+   "role": "AXCheckBox",
+   "subrole": "AXSegment",
+   "title": "",
+   "label": "align right",
+   "value": "0",
+   "placeholder": "",
+   "help": "Align text to right",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 616.0,
+    "y": 113.0,
+    "w": 20.0,
+    "h": 20.0
+   },
+   "actions": [
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled > AXGroup",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 16,
+   "role": "AXCheckBox",
+   "subrole": "AXSegment",
+   "title": "",
+   "label": "fully justify",
+   "value": "0",
+   "placeholder": "",
+   "help": "Justify text",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 637.0,
+    "y": 113.0,
+    "w": 20.0,
+    "h": 20.0
+   },
+   "actions": [
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled > AXGroup",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 17,
+   "role": "AXMenuButton",
+   "subrole": "",
+   "title": "",
+   "label": "list style",
+   "value": "",
+   "placeholder": "",
+   "help": "List bullets and numbering",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 661.0,
+    "y": 112.0,
+    "w": 48.0,
+    "h": 22.0
+   },
+   "actions": [
+    "AXShowMenu",
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 18,
+   "role": "AXPopUpButton",
+   "subrole": "",
+   "title": "",
+   "label": "line spacing",
+   "value": "1.0",
+   "placeholder": "",
+   "help": "Line and paragraph spacing",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 712.0,
+    "y": 112.0,
+    "w": 53.0,
+    "h": 22.0
+   },
+   "actions": [
+    "AXShowMenu",
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 19,
+   "role": "AXCheckBox",
+   "subrole": "AXSegment",
+   "title": "",
+   "label": "highlight",
+   "value": "0",
+   "placeholder": "",
+   "help": "Highlight text",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 769.0,
+    "y": 113.0,
+    "w": 20.0,
+    "h": 20.0
+   },
+   "actions": [
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled > AXGroup",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 20,
+   "role": "AXMenuButton",
+   "subrole": "AXSegment",
+   "title": "",
+   "label": "highlight color",
+   "value": "",
+   "placeholder": "",
+   "help": "Highlight color",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 790.0,
+    "y": 113.0,
+    "w": 20.0,
+    "h": 20.0
+   },
+   "actions": [
+    "AXPress",
+    "AXShowMenu"
+   ],
+   "path": "AXWindow:Untitled > AXGroup",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 21,
+   "role": "AXStaticText",
+   "subrole": "",
+   "title": "",
+   "label": "",
+   "value": "—",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 291.0,
+    "y": 80.0,
+    "w": 14.0,
+    "h": 18.0
+   },
+   "actions": [],
+   "path": "AXWindow:Untitled",
+   "interactive": false,
+   "submenu": false
+  },
+  {
+   "id": 22,
+   "role": "AXButton",
+   "subrole": "AXCloseButton",
+   "title": "",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 160.0,
+    "y": 81.0,
+    "w": 16.0,
+    "h": 16.0
+   },
+   "actions": [
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 23,
+   "role": "AXButton",
+   "subrole": "AXFullScreenButton",
+   "title": "",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "this button also has an action to zoom the window",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 206.0,
+    "y": 81.0,
+    "w": 16.0,
+    "h": 16.0
+   },
+   "actions": [
+    "AXPress",
+    "AXZoomWindow",
+    "AXShowMenu"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 24,
+   "role": "AXButton",
+   "subrole": "AXMinimizeButton",
+   "title": "",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 183.0,
+    "y": 81.0,
+    "w": 16.0,
+    "h": 16.0
+   },
+   "actions": [
+    "AXPress"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 25,
+   "role": "AXMenuButton",
+   "subrole": "",
+   "title": "Edited",
+   "label": "document actions",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": false,
+   "focused": false,
+   "frame": {
+    "x": 306.0,
+    "y": 80.0,
+    "w": 55.0,
+    "h": 18.0
+   },
+   "actions": [
+    "AXPress",
+    "AXShowMenu"
+   ],
+   "path": "AXWindow:Untitled",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 26,
+   "role": "AXStaticText",
+   "subrole": "",
+   "title": "",
+   "label": "",
+   "value": "Untitled",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 234.0,
+    "y": 81.0,
+    "w": 56.0,
+    "h": 16.0
+   },
+   "actions": [],
+   "path": "AXWindow:Untitled",
+   "interactive": false,
+   "submenu": false
+  },
+  {
+   "id": 27,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "Apple",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 10.0,
+    "y": 0.0,
+    "w": 34.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 28,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "TextEdit",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 44.0,
+    "y": 0.0,
+    "w": 73.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 29,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "File",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 117.0,
+    "y": 0.0,
+    "w": 42.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 30,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "Edit",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 159.0,
+    "y": 0.0,
+    "w": 44.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 31,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "Format",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 203.0,
+    "y": 0.0,
+    "w": 63.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 32,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "View",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 266.0,
+    "y": 0.0,
+    "w": 50.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 33,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "Window",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 316.0,
+    "y": 0.0,
+    "w": 69.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  },
+  {
+   "id": 34,
+   "role": "AXMenuBarItem",
+   "subrole": "",
+   "title": "Help",
+   "label": "",
+   "value": "",
+   "placeholder": "",
+   "help": "",
+   "selected": "",
+   "enabled": true,
+   "focused": false,
+   "frame": {
+    "x": 385.0,
+    "y": 0.0,
+    "w": 48.0,
+    "h": 33.0
+   },
+   "actions": [
+    "AXCancel",
+    "AXPress",
+    "AXPick"
+   ],
+   "path": "AXMenuBar",
+   "interactive": true,
+   "submenu": false
+  }
+ ]
+}

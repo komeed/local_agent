@@ -4,10 +4,14 @@ A local macOS desktop agent. You give it a goal; it loops until done:
 
 1. **Observe** – reads every interactive element of the frontmost window through the macOS Accessibility API
    (the same approach as [MacOS-MCP](https://github.com/CursorTouch/MacOS-MCP)).
-2. **Plan** – Qwen 2.5 Coder (via Ollama) sees only the goal, a compact scope (app, window, element counts by role,
-   focused element) and recent step history, and returns one next step as JSON: `click`, `double_click`,
-   `right_click`, `type`, `shortcut`, `scroll`, or `terminal` (which must include a `command`).
-3. **Select** – a System-1 decision model picks the element matching Qwen's target. The default is
+2. **Plan** – Qwen3.5 9B (via Ollama, thinking off) sees only the goal, a compact scope (app, window, element counts by role,
+   focused element), recent step history, and a **screen view**: one text line per visible control and text, grouped
+   by area (dialog, open menu, window, toolbar, lists, menu bar), long lists collapsed, cut to fit its context window
+   (~1–2k tokens). It returns one next step as JSON: `click`, `double_click`, `right_click`, `type`, `shortcut`,
+   `scroll`, or `terminal` (which must include a `command`). Controls in the view are numbered, so Qwen can name the
+   element directly (`target.id`).
+3. **Select** – when Qwen gave a number, that element is used. Otherwise a System-1 decision model picks the element
+   matching Qwen's description. The default is
    [JevK5](https://github.com/allebee/jevk5) 4B (Q8_0 GGUF on llama.cpp, ~5 GB). Candidates are first narrowed by
    role, then by a lexical pre-filter to the 32 best text matches (all of them if nothing's text matches), so JevK5 —
    which reads 16 options per pass — usually needs 1–3 passes. Choice questions are capped at 255 options, so any
@@ -27,7 +31,7 @@ Planner (Ollama):
 
 ```bash
 brew install ollama && ollama serve   # or run the Ollama app
-ollama pull qwen2.5-coder:7b
+ollama pull qwen3.5:9b   # needs Ollama >= 0.22
 ```
 
 Selector (JevK5 4B on llama.cpp; `uv sync` already installed jevk5's stdlib client without torch):
@@ -59,6 +63,50 @@ Check everything:
 uv run local-agent doctor
 ```
 
+## Choosing the planner model
+
+`evals/planner_eval.py` scores planner models on 28 cases: 17 taken from live TextEdit runs (shortcuts, menu/submenu
+navigation, recovering from failed steps, terminal for file tasks, knowing when it's done) and 11 that need what's on
+screen (toolbar controls, save sheet, error dialog, find bar, a 300-file Finder window, reading on-screen text). Each
+model runs with the screen view off, as names only (Jev picks every element), and numbered (`ids`, the default):
+
+```bash
+uv run python -m evals.planner_eval qwen2.5-coder:3b qwen2.5-coder:7b qwen3.5:9b --views off,names,ids
+```
+
+Results on an M-series Mac with 24 GB (JevK5 loaded, 8k planner context). "Screen" is the 11 on-screen cases:
+
+| Model | View | Accuracy | Screen | Other | Median / step | Prompt tokens | Memory | Pressure |
+|---|---|---|---|---|---|---|---|---|
+| **qwen3.5:9b** | **ids** (default) | **93%** | 91% | 94% | 4.8 s | ~1.8k | 7.8 GB | green, 44% free |
+| qwen3.5:9b | names | 89% | 91% | 88% | 4.1 s | ~1.6k | | |
+| qwen3.5:9b | off | 64% | 36% | 82% | 3.4 s | ~1.4k | | |
+| qwen2.5-coder:7b | names | 61% | 55% | 65% | 3.7 s | ~1.0k | 5.1 GB | green, 60% free |
+| qwen2.5-coder:7b | ids | 50% | 36% | 59% | 3.8 s | ~1.1k | | |
+| qwen2.5-coder:7b | off | 50% | 9% | 76% | 2.9 s | ~0.7k | | |
+| qwen2.5-coder:3b | off | 32% | 18% | 41% | 1.7 s | ~0.7k | 2.4 GB | green, 69% free |
+| qwen2.5-coder:3b | names | 29% | 45% | 18% | 2.0 s | ~0.9k | | |
+| qwen2.5-coder:3b | ids | 25% | 36% | 18% | 2.3 s | ~1.1k | | |
+
+The view lifts the 9B from 64% to 93% for about 1.4 s more per step. Smaller models gain on on-screen cases but lose
+on the rest: they start clicking listed controls instead of using shortcuts, terminal or `done`. For a 7B use
+`--view names`; the 3B doesn't plan reliably either way (it almost never chooses `terminal` or `done`).
+An earlier 17-case run without the view also tried qwen3.5:4b (71%, below qwen2.5-coder:7b's 82%).
+
+`--planner choice` (`planner_mode="choice"`) splits each step into short multiple-choice questions in one
+conversation: first the kind of step from an ordered checklist (done, terminal, click, shortcut, type, open,
+scroll), then its details (keys, the element picked by its name from the view, the text or command). It didn't beat
+the default, so it stays opt-in:
+
+| Model | `--planner choice` | best `json` (above) |
+|---|---|---|
+| qwen3.5:9b | 82% (4.1 s) | 93% |
+| qwen2.5-coder:7b | 54% (2.4 s) | 61% |
+| qwen2.5-coder:3b | 32% (0.9 s) | 32% |
+
+The 3B's weak point is deciding what kind of step comes next (it answers "click" for terminal and shortcut tasks
+even with worked examples), not writing the JSON.
+
 ## Usage
 
 ```bash
@@ -68,5 +116,6 @@ uv run local-agent run "make a new document and type hello world" --app TextEdit
 ```
 
 Without `--app`, the agent waits `--delay` seconds (default 3) so you can switch to the target window.
-Useful flags: `--threshold 0.5`, `--max-steps 20`, `--model qwen2.5-coder:14b`, `--yes`, `--log run.json`.
+Useful flags: `--threshold 0.5`, `--max-steps 20`, `--model qwen2.5-coder:7b`, `--view ids|names|off`,
+`--planner json|choice`, `--yes`, `--log run.json`.
 All settings can also be set as `LOCAL_AGENT_<NAME>` env vars (see `local_agent/config.py`).
