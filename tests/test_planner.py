@@ -53,3 +53,13 @@ def test_gives_up_after_second_invalid(textedit):
     planner, _ = _planner([bad, bad])
     with pytest.raises(PlannerError):
         planner.next_step("g", textedit.scope(), [])
+
+
+def test_warns_after_repeated_identical_failures(textedit):
+    fail = StepRecord(1, "click [AXTextArea] body", executed=True, verified=False)
+    ok = StepRecord(1, "click [AXTextArea] body", executed=True, verified=True)
+    assert "warning" not in json.loads(build_messages("g", textedit.scope(), [fail])[1]["content"])
+    warned = json.loads(build_messages("g", textedit.scope(), [ok, fail, fail])[1]["content"])
+    assert "last 2 steps" in warned["warning"]
+    other = StepRecord(2, "shortcut keys=cmd+a", executed=True, verified=False)
+    assert "warning" not in json.loads(build_messages("g", textedit.scope(), [fail, other])[1]["content"])

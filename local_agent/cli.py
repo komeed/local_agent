@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import subprocess
 import time
 from pathlib import Path
 
@@ -21,8 +20,10 @@ console = Console()
 def _prepare(app_name: str | None, delay: float) -> None:
     """Bring the target window to the front: launch/activate an app, or give the user time to switch."""
     if app_name:
-        subprocess.run(["open", "-a", app_name], check=True)
-        time.sleep(max(delay, 1.0))
+        from local_agent.observe.ax_tree import activate_app
+
+        activate_app(app_name)
+        time.sleep(0.5)  # let the window finish appearing
     elif delay > 0:
         console.print(f"[dim]Switch to the target window — observing in {delay:.0f}s…[/dim]")
         time.sleep(delay)
@@ -108,7 +109,10 @@ def run(
     def confirm(cmd: str) -> bool:
         if yes:
             return True
-        return typer.confirm(f"Run terminal command: {cmd}", default=False)
+        try:
+            return typer.confirm(f"Run terminal command: {cmd}", default=False)
+        except typer.Abort:  # no TTY / EOF: treat as declined
+            return False
 
     def on_plan(n, snap, plan):
         console.rule(f"step {n} · {snap.app} — {snap.window_title or '(no window)'} · {len(snap.elements)} elements")
@@ -120,10 +124,15 @@ def run(
             f"[dim]({sel.candidates} candidates, {sel.rounds} round{'s' if sel.rounds > 1 else ''})[/dim]"
         )
 
+    def status(rec) -> str:
+        if rec.note.startswith("dry-run"):
+            return "dry-run"
+        return "ok" if rec.succeeded else "failed"
+
     def on_record(rec):
-        color = "green" if rec.succeeded else "red"
+        color = {"ok": "green", "failed": "red"}.get(status(rec), "yellow")
         v = "" if rec.verify_probability is None else f" verify={rec.verify_probability:.2f}"
-        console.print(f"[{color}]{'ok' if rec.succeeded else 'failed'}[/{color}]{v} {rec.note}")
+        console.print(f"[{color}]{status(rec)}[/{color}]{v} {rec.note}")
 
     hooks = Hooks(
         observe=lambda: take_snapshot(s),
@@ -145,7 +154,7 @@ def run(
             r.plan,
             r.element or "",
             "" if r.probability is None else f"{r.probability:.2f}",
-            "ok" if r.succeeded else "failed",
+            status(r),
         )
     console.print(table)
     if log:

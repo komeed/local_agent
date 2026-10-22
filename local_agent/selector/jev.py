@@ -203,28 +203,30 @@ class JevClient:
 
     def verify(self, goal: str, step: PlannerOutput, element: UIElement | None, before: Snapshot, after: Snapshot) -> float:
         """Probability that the UI changed the way this step intended."""
+        # The overall goal is left out on purpose: with it, Jev tends to answer "is the goal done?" (usually no)
+        # instead of "did this one step take effect?". Wording tuned on live TextEdit cases.
         before_names = {e.describe(80) for e in before.elements}
         after_names = {e.describe(80) for e in after.elements}
         appeared = sorted(after_names - before_names)[:25]
         disappeared = sorted(before_names - after_names)[:25]
         state = (
-            f"User goal: {goal}\n"
-            f"Step performed: {step.summary()}\n"
-            f"Element acted on: {element.describe() if element else 'n/a'}\n"
-            f"Before: {before.scope()}\n"
-            f"After: {after.scope()}\n"
-            f"Elements that appeared: {appeared}\n"
-            f"Elements that disappeared: {disappeared}"
+            f"Action performed: {step.summary()}\n"
+            f"Target element: {element.describe() if element else 'n/a'}\n"
+            f"UI elements before: {len(before.elements)}, after: {len(after.elements)}\n"
+            f"Appeared or changed: {appeared or 'NOTHING'}\n"
+            f"Disappeared or changed: {disappeared or 'NOTHING'}"
         )
         answers = self.system_one(
             state,
             {
                 "changed": {
                     "type": "noul",
-                    "instructions": "Did the UI change the way the performed step intended?",
+                    "instructions": "Is there evidence in the UI changes that the action worked (for example a menu "
+                    "opened, text was selected, text was entered, a window or dialog appeared)? If nothing changed, "
+                    "answer false.",
                     "criteria": {
-                        "true": "the step visibly took effect (new window/dialog/content, text entered, state toggled)",
-                        "false": "nothing relevant changed or something unexpected happened",
+                        "true": "the changes show the action took effect",
+                        "false": "no relevant change",
                     },
                 }
             },

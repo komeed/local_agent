@@ -2,14 +2,25 @@
 
 from __future__ import annotations
 
+import subprocess
 import time
 
-from AppKit import NSWorkspace
+from AppKit import (
+    NSApplicationActivateAllWindows,
+    NSApplicationActivationPolicyRegular,
+    NSDate,
+    NSRunLoop,
+    NSRunningApplication,
+    NSWorkspace,
+)
 from ApplicationServices import (
     AXIsProcessTrustedWithOptions,
     AXUIElementCopyActionNames,
     AXUIElementCopyAttributeValue,
     AXUIElementCreateApplication,
+    AXUIElementCreateSystemWide,
+    AXUIElementGetPid,
+    AXUIElementSetAttributeValue,
     AXValueGetValue,
     kAXTrustedCheckOptionPrompt,
     kAXValueCGPointType,
@@ -44,6 +55,7 @@ INTERACTIVE_ROLES = {
     "AXSegmentedControl",
 }
 INTERACTIVE_ACTIONS = {"AXPress", "AXConfirm", "AXPick", "AXIncrement", "AXOpen"}
+TEXT_ROLES = {"AXTextField", "AXTextArea", "AXSearchField", "AXComboBox"}
 
 
 class AccessibilityError(RuntimeError):
@@ -100,6 +112,7 @@ def _to_element(el, idx: int, role: str, path: str) -> UIElement | None:
         value=_str(_attr(el, "AXValue")),
         placeholder=_str(_attr(el, "AXPlaceholderValue")),
         help=_str(_attr(el, "AXHelp")),
+        selected=_str(_attr(el, "AXSelectedText")) if role in TEXT_ROLES else "",
         enabled=True if enabled is None else bool(enabled),
         focused=bool(_attr(el, "AXFocused")),
         frame=frame,
@@ -130,10 +143,50 @@ def _walk(root, root_path: str, settings: Settings, out: list[UIElement], deadli
 
 
 def frontmost_app():
+    """The app with keyboard focus. NSWorkspace.frontmostApplication() is KVO-backed and goes stale in a process
+    without a run loop (like this CLI), so ask the AX system-wide element first."""
+    err, focused = AXUIElementCopyAttributeValue(AXUIElementCreateSystemWide(), "AXFocusedApplication", None)
+    if err == 0 and focused is not None:
+        err, pid = AXUIElementGetPid(focused, None)
+        app = NSRunningApplication.runningApplicationWithProcessIdentifier_(pid) if err == 0 else None
+        if app is not None:
+            return app
+    NSRunLoop.currentRunLoop().runUntilDate_(NSDate.dateWithTimeIntervalSinceNow_(0.05))
     app = NSWorkspace.sharedWorkspace().frontmostApplication()
     if app is None:
         raise AccessibilityError("No frontmost application")
     return app
+
+
+def _running(name: str):
+    """The running regular (Dock) app named `name` or with that bundle id; skips helpers and CLI processes."""
+    want = name.lower().removesuffix(".app")
+    for app in NSWorkspace.sharedWorkspace().runningApplications():
+        if app.activationPolicy() != NSApplicationActivationPolicyRegular:
+            continue
+        if want in (_str(app.localizedName()).lower(), _str(app.bundleIdentifier()).lower()):
+            return app
+    return None
+
+
+def activate_app(name: str, timeout_s: float = 10.0) -> None:
+    """Launch `name` if needed and bring it to the front. `open -a` alone launches but, on recent macOS, does
+    not take focus from the app the user is in; NSRunningApplication.activate does."""
+    app = _running(name)
+    if app is None:
+        subprocess.run(["open", "-g", "-a", name], check=True, capture_output=True)
+        deadline = time.monotonic() + timeout_s
+        while (app := _running(name)) is None:
+            if time.monotonic() > deadline:
+                raise AccessibilityError(f"{name} did not start within {timeout_s:.0f}s")
+            time.sleep(0.2)
+    app.activateWithOptions_(NSApplicationActivateAllWindows)
+    pid = app.processIdentifier()
+    deadline = time.monotonic() + timeout_s
+    while frontmost_app().processIdentifier() != pid:
+        if time.monotonic() > deadline:
+            raise AccessibilityError(f"Could not bring {name} to the front")
+        time.sleep(0.1)
 
 
 def snapshot(settings: Settings | None = None, include_menubar: bool = True) -> Snapshot:
@@ -147,7 +200,9 @@ def snapshot(settings: Settings | None = None, include_menubar: bool = True) -> 
     app = frontmost_app()
     pid = int(app.processIdentifier())
     app_el = AXUIElementCreateApplication(pid)
-    window = _attr(app_el, "AXFocusedWindow") or _attr(app_el, "AXMainWindow")
+    # Electron/Chromium apps only build their AX tree once asked; harmless elsewhere.
+    AXUIElementSetAttributeValue(app_el, "AXManualAccessibility", True)
+    window =_attr(app_el, "AXFocusedWindow") or _attr(app_el, "AXMainWindow")
     if window is None:
         windows = _attr(app_el, "AXWindows") or []
         window = windows[0] if windows else None
@@ -166,10 +221,17 @@ def snapshot(settings: Settings | None = None, include_menubar: bool = True) -> 
 
     if include_menubar:
         menubar = _attr(app_el, "AXMenuBar")
+        open_menus = []
         for item in (_attr(menubar, "AXChildren") or []) if menubar is not None else []:
             el = _to_element(item, len(elements), _str(_attr(item, "AXRole")), "AXMenuBar")
             if el is not None:
                 elements.append(el)
+            if _attr(item, "AXSelected"):
+                open_menus.append((item, f"AXMenuBar > AXMenuBarItem:{_str(_attr(item, 'AXTitle'))}"))
+        # Items of an open menu (and its open submenus) have real frames; closed ones are 0x0 and get skipped.
+        for item, path in open_menus:
+            for menu in _attr(item, "AXChildren") or []:
+                _walk(menu, path, settings, elements, deadline)
 
     return Snapshot(
         app=_str(app.localizedName()),

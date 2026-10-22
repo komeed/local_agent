@@ -43,6 +43,15 @@ the planner returns `done`, `max_steps`, or `max_consecutive_failures`.
   visible text matches, e.g. icon-only buttons) → tournament via `chunk()` if still >255 (balanced so no chunk has a
   single option). A lone candidate is checked with a `noul` question. JevK5 itself reads 16 options per pass and
   combines more with its knockout, so pass count ≈ ceil(n/16)+1 — that's why the pre-filter exists.
+- **Verification** (`JevClient.verify`) asks a `noul` over the before/after element diff and deliberately omits the
+  overall goal: with the goal in the state, JevK5 answers "is the goal done?" and scores working steps ~0.4. Re-tune
+  against live cases (menu opened, cmd+a selection, typing, no-change) if you change the wording.
+- **Observation quirks** (`observe/ax_tree.py`): the frontmost app comes from the AX system-wide element because
+  `NSWorkspace.frontmostApplication()` is stale without a run loop; `activate_app` uses
+  `NSRunningApplication.activateWithOptions_` since `open -a` can't take focus on recent macOS; Electron apps need
+  `AXManualAccessibility` set before their tree appears; open menus are walked via the selected `AXMenuBarItem`
+  (closed menu items report 0×0 frames and are dropped). `Snapshot.scope()` lists open menu item names so the
+  planner can navigate submenus, and `selected` text is part of `describe()` so selections show up in diffs.
 - **Thresholds**: `threshold` gates acting on Jev's *probability* for the pick (not `confidence`, which is
   entropy-normalized and stays low for 2–3-way finals). `verify_threshold` gates the post-action `noul` check.
 - **Side effects are injected** through `loop.Hooks` (observe, execute, run_terminal, confirm, sleep), so the loop is

@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from typing import Any
+
+
+MAX_SCOPE_MENU_ITEMS = 40
 
 
 @dataclass
@@ -29,6 +32,7 @@ class UIElement:
     value: str = ""
     placeholder: str = ""
     help: str = ""
+    selected: str = ""  # AXSelectedText, for text roles
     enabled: bool = True
     focused: bool = False
     frame: Frame | None = None
@@ -52,6 +56,8 @@ class UIElement:
             parts.append(f'placeholder="{self.placeholder}"')
         if self.value and self.value not in (self.title, self.label):
             parts.append(f'value="{self.value[:40]}"')
+        if self.selected:
+            parts.append(f'selected="{self.selected[:30]}"')
         if self.help and not (self.title or self.label):
             parts.append(f'help="{self.help[:40]}"')
         if not self.enabled:
@@ -66,8 +72,11 @@ class UIElement:
         return text if len(text) <= max_len else text[: max_len - 1] + "…"
 
     def to_dict(self) -> dict:
-        d = asdict(self)
-        d.pop("ref", None)
+        # Not asdict(): it deep-copies `ref`, and AXUIElementRefs can't be copied.
+        d = {f.name: getattr(self, f.name) for f in fields(self) if f.name != "ref"}
+        d["actions"] = list(self.actions)
+        if self.frame is not None:
+            d["frame"] = asdict(self.frame)
         return d
 
     @classmethod
@@ -91,12 +100,17 @@ class Snapshot:
         """Compact summary given to the planner instead of the full element list."""
         counts = Counter(e.role for e in self.elements)
         focused = next((e for e in self.elements if e.focused), None)
-        return {
+        scope = {
             "app": self.app,
             "window": self.window_title,
             "element_counts_by_role": dict(counts.most_common()),
             "focused_element": focused.describe() if focused else None,
         }
+        # Open menus are short and the planner can't navigate them blind (e.g. Bold lives under Format > Font).
+        menu_items = [e.name() for e in self.elements if e.role == "AXMenuItem" and e.name()]
+        if menu_items:
+            scope["open_menu_items"] = menu_items[:MAX_SCOPE_MENU_ITEMS]
+        return scope
 
     def to_dict(self) -> dict:
         return {
