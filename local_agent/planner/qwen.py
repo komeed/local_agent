@@ -116,6 +116,7 @@ class QwenPlanner:
         self.structured = True
         self.schema_in_prompt = True  # when unstructured, add the schema as a system message (ChoicePlanner doesn't)
         self.last_prompt_tokens = 0  # Ollama's prompt_eval_count for the most recent call
+        self.last_messages: list[dict] = []  # the last conversation sent, plus the model's reply (for --events)
 
     def _post(self, messages: list[dict], schema: dict) -> httpx.Response:
         body = {
@@ -134,6 +135,7 @@ class QwenPlanner:
                 + json.dumps(schema),
             }
             body["messages"] = [messages[0], schema_note, *messages[1:]]
+        self._sent = body["messages"]
         return self.client.post("/api/chat", json=body)
 
     def _chat(self, messages: list[dict], schema: dict | None = None) -> str:
@@ -145,6 +147,7 @@ class QwenPlanner:
         r.raise_for_status()
         data = r.json()
         self.last_prompt_tokens = data.get("prompt_eval_count", 0)
+        self.last_messages = [*self._sent, {"role": "assistant", "content": data["message"]["content"]}]
         return extract_json(data["message"]["content"])
 
     def next_step(

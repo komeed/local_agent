@@ -55,6 +55,10 @@ the planner returns `done`, `max_steps`, or `max_consecutive_failures`.
   checklist + worked examples, enum-constrained), then one detail question appended to the same conversation so
   Ollama reuses the cached prefix; click targets are chosen by name-first labels parsed from the screen view, not
   numbers. Same `PlannerOutput` out. It scored below the default JSON planner for 3B/7B/9B (see README).
+- **App interface**: the LocalAgent macOS app (parent repo; this folder is its `local_llm` submodule) drives the CLI
+  as a child process: `doctor --json`, and `run --events`, which streams JSON Lines from `local_agent/events.py`
+  (stdout only; the rich log goes to stderr; `confirm_terminal` is answered with a `y`/`n` line on stdin). The
+  contract is `docs/APP_INTEGRATION.md`. Keep it in sync, and bump `EVENTS_VERSION` when a field changes meaning.
 - **Jev backends** share TypeSafe's `/v1/systemone` question/answer shapes. `make_selector()` picks `JevK5Client`
   (default; calls `JevK5GGUF.decide` per question against llama-server) or `JevClient` (OpenJev over HTTP). Both
   inherit `select`/`verify`, which only go through `system_one()`.

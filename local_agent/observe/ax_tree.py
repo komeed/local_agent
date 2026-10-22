@@ -217,7 +217,8 @@ def snapshot(settings: Settings | None = None, include_menubar: bool = True) -> 
     settings = settings or Settings()
     if not ensure_trusted(prompt=False):
         raise AccessibilityError(
-            "Accessibility permission missing. Grant it to your terminal app in "
+            "Accessibility permission missing. Grant it to the app that runs local-agent (your terminal, or the "
+            "LocalAgent app) in "
             "System Settings > Privacy & Security > Accessibility, then retry."
         )
     app = frontmost_app()

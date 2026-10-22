@@ -119,3 +119,6 @@ Without `--app`, the agent waits `--delay` seconds (default 3) so you can switch
 Useful flags: `--threshold 0.5`, `--max-steps 20`, `--model qwen2.5-coder:7b`, `--view ids|names|off`,
 `--planner json|choice`, `--yes`, `--log run.json`.
 All settings can also be set as `LOCAL_AGENT_<NAME>` env vars (see `local_agent/config.py`).
+
+For programs driving the agent (like the LocalAgent macOS app), `run --events` streams JSON Lines and
+`doctor --json` reports health and installed models. See [docs/APP_INTEGRATION.md](docs/APP_INTEGRATION.md).

@@ -56,32 +56,43 @@ def snapshot(
 
 
 @app.command()
-def doctor():
+def doctor(
+    as_json: bool = typer.Option(False, "--json", help="Print one JSON object (for the app) instead of text."),
+):
     """Check Accessibility permission, Ollama + planner model, and the Jev backend."""
     from local_agent.observe.ax_tree import ensure_trusted
     from local_agent.selector.jev import make_selector
 
     s = Settings.from_env()
-    ok = True
-    trusted = ensure_trusted(prompt=True)
-    console.print(f"Accessibility permission: {'[green]ok' if trusted else '[red]missing (see System Settings)'}")
-    ok &= trusted
+    report: dict = {"accessibility": ensure_trusted(prompt=True)}
+    ollama: dict = {"url": s.ollama_url, "ok": False, "models": [], "planner_model": s.planner_model,
+                    "planner_model_present": False, "error": None}  # fmt: skip
     try:
         tags = httpx.get(f"{s.ollama_url}/api/tags", timeout=5).json().get("models", [])
         names = {m["name"] for m in tags}
-        has = s.planner_model in names or f"{s.planner_model}:latest" in names
+        ollama.update(ok=True, models=[{"name": m["name"], "size_gb": round(m.get("size", 0) / 1e9, 2)} for m in tags],
+                      planner_model_present=s.planner_model in names or f"{s.planner_model}:latest" in names)
+    except httpx.HTTPError as e:
+        ollama["error"] = str(e)
+    jev_url = s.jevk5_url if s.jev_backend == "jevk5" else s.jev_url
+    report["ollama"] = ollama
+    report["jev"] = {"backend": s.jev_backend, "url": jev_url, "ok": make_selector(s).health()}
+    ok = report["accessibility"] and ollama["planner_model_present"] and report["jev"]["ok"]
+    report["ok"] = ok
+    if as_json:
+        print(json.dumps(report))
+        raise typer.Exit(0 if ok else 1)
+
+    trusted = report["accessibility"]
+    console.print(f"Accessibility permission: {'[green]ok' if trusted else '[red]missing (see System Settings)'}")
+    if ollama["ok"]:
         console.print(
             f"Ollama at {s.ollama_url}: [green]ok[/green]; model {s.planner_model}: "
-            + ("[green]present" if has else f"[red]missing — run `ollama pull {s.planner_model}`")
+            + ("[green]present" if ollama["planner_model_present"] else f"[red]missing — run `ollama pull {s.planner_model}`")
         )
-        ok &= has
-    except httpx.HTTPError as e:
-        console.print(f"Ollama at {s.ollama_url}: [red]unreachable ({e}) — start it with `ollama serve`")
-        ok = False
-    jev_url = s.jevk5_url if s.jev_backend == "jevk5" else s.jev_url
-    jev_ok = make_selector(s).health()
-    console.print(f"Jev ({s.jev_backend}) at {jev_url}: " + ("[green]ok" if jev_ok else "[red]unreachable — see README"))
-    ok &= jev_ok
+    else:
+        console.print(f"Ollama at {s.ollama_url}: [red]unreachable ({ollama['error']}) — start it with `ollama serve`")
+    console.print(f"Jev ({s.jev_backend}) at {jev_url}: " + ("[green]ok" if report["jev"]["ok"] else "[red]unreachable — see README"))
     raise typer.Exit(0 if ok else 1)
 
 
@@ -100,9 +111,16 @@ def run(
         None, help="Planner mode: json (one free-form step, default) or choice (multiple choice; for small models)."
     ),
     log: Path | None = typer.Option(None, "--log", help="Write the step history as JSON here."),
+    events: bool = typer.Option(
+        False, "--events", help="Write JSON Lines events to stdout for the app (docs/APP_INTEGRATION.md); "
+        "human-readable output moves to stderr. Terminal commands are confirmed by a 'y' line on stdin."
+    ),
 ):
     """Work toward GOAL on the frontmost window until done or out of steps."""
+    import sys
+
     from local_agent.act import executor
+    from local_agent.events import EventStream, TimedPlanner, TimedSelector, step_status
     from local_agent.loop import Agent, Hooks
     from local_agent.observe.ax_tree import snapshot as take_snapshot
     from local_agent.planner.qwen import make_planner
@@ -110,37 +128,48 @@ def run(
 
     s = Settings.from_env(threshold=threshold, max_steps=max_steps, planner_model=model, planner_view=view,
                           planner_mode=planner)
+    con = Console(stderr=True) if events else console
+    stream = EventStream() if events else None
+    timed_planner = TimedPlanner(make_planner(s))
+    timed_selector = TimedSelector(make_selector(s))
+    current = {"step": 0}
 
     def confirm(cmd: str) -> bool:
         if yes:
             return True
+        if stream:  # the app answers with one line on stdin
+            stream.confirm(current["step"], cmd)
+            return sys.stdin.readline().strip().lower() in ("y", "yes")
         try:
             return typer.confirm(f"Run terminal command: {cmd}", default=False)
         except typer.Abort:  # no TTY / EOF: treat as declined
             return False
 
     def on_plan(n, snap, plan):
-        console.rule(f"step {n} · {snap.app} — {snap.window_title or '(no window)'} · {len(snap.elements)} elements")
-        console.print(f"[cyan]plan[/cyan] {plan.summary()}  [dim]{plan.reasoning}[/dim]")
+        current["step"] = n
+        timed_selector.verify_seconds = None
+        if stream:
+            stream.plan(n, snap, plan, timed_planner)
+        con.rule(f"step {n} · {snap.app} — {snap.window_title or '(no window)'} · {len(snap.elements)} elements")
+        con.print(f"[cyan]plan[/cyan] {plan.summary()}  [dim]{plan.reasoning}[/dim]")
 
     def on_select(sel):
+        if stream:
+            stream.select(current["step"], sel, timed_selector)
         if sel.source == "planner":
-            console.print(f"[magenta]pick[/magenta] [{sel.element.id}] {sel.element.describe()}  [dim](by number)[/dim]")
+            con.print(f"[magenta]pick[/magenta] [{sel.element.id}] {sel.element.describe()}  [dim](by number)[/dim]")
             return
-        console.print(
+        con.print(
             f"[magenta]jev[/magenta] {sel.element.describe()}  p={sel.probability:.2f} conf={sel.confidence:.2f} "
             f"[dim]({sel.candidates} candidates, {sel.rounds} round{'s' if sel.rounds > 1 else ''})[/dim]"
         )
 
-    def status(rec) -> str:
-        if rec.note.startswith("dry-run"):
-            return "dry-run"
-        return "ok" if rec.succeeded else "failed"
-
     def on_record(rec):
-        color = {"ok": "green", "failed": "red"}.get(status(rec), "yellow")
+        if stream:
+            stream.record(rec, timed_selector)
+        color = {"ok": "green", "failed": "red"}.get(step_status(rec), "yellow")
         v = "" if rec.verify_probability is None else f" verify={rec.verify_probability:.2f}"
-        console.print(f"[{color}]{status(rec)}[/{color}]{v} {rec.note}")
+        con.print(f"[{color}]{step_status(rec)}[/{color}]{v} {rec.note}")
 
     hooks = Hooks(
         observe=lambda: take_snapshot(s),
@@ -151,9 +180,23 @@ def run(
         on_select=on_select,
         on_record=on_record,
     )
-    agent = Agent(s, make_planner(s), make_selector(s), hooks, dry_run=dry_run)
-    _prepare(app_name, delay)
-    result = agent.run(goal)
+    agent = Agent(s, timed_planner, timed_selector, hooks, dry_run=dry_run)
+    if stream:
+        stream.start(goal, s, dry_run, app_name)
+    try:
+        _prepare(app_name, delay)
+        result = agent.run(goal)
+    except KeyboardInterrupt:  # the app stops a run with SIGINT
+        if stream:
+            stream.result(False, "cancelled", [])
+        raise typer.Exit(130)
+    except Exception as e:  # e.g. Accessibility permission missing, app not running
+        if stream:
+            stream.error(f"{type(e).__name__}: {e}")
+            raise typer.Exit(2)
+        raise
+    if stream:
+        stream.result(result.success, result.reason, result.history)
 
     table = Table("step", "plan", "element", "p", "result", title=f"{'✓' if result.success else '✗'} {result.reason}")
     for r in result.history:
@@ -162,9 +205,9 @@ def run(
             r.plan,
             r.element or "",
             "" if r.probability is None else f"{r.probability:.2f}",
-            status(r),
+            step_status(r),
         )
-    console.print(table)
+    con.print(table)
     if log:
         log.write_text(json.dumps([r.for_planner() for r in result.history], indent=2))
     raise typer.Exit(0 if result.success else 1)
