@@ -205,3 +205,17 @@ def test_stage_events_name_each_phase_in_order(run_cli):
                                             "planning"]
     assert all(e["step"] >= 1 and e["type"] == "stage" and "t" in e for e in stages)
     assert stages[0]["elapsed_s"] is None and all(isinstance(e["elapsed_s"], float) for e in stages[1:])
+
+
+def test_two_unsure_steps_end_the_run_with_an_unsure_reason(run_cli):
+    from local_agent.planner.jev_only import Unsure
+
+    class UnsureStep(Unsure):
+        def __init__(self):
+            super().__init__('unsure (p=0.12): no option clearly fits; click "A"; click "B"')
+
+    r, ev = run_cli([UnsureStep, UnsureStep, DONE])
+    result = ev[-1]
+    assert r.exit_code == 1 and result["type"] == "result" and not result["success"]
+    assert result["reason"] == "unsure: do it" and result["steps"] == 2
+    assert result["history"][0]["note"].startswith("unsure (p=0.12)") and result["history"][0]["executed"] is False

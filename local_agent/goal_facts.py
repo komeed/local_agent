@@ -124,6 +124,74 @@ def _site_facts(goal: str, apps: list[str], found: list[str]) -> list[Fact]:
     return out
 
 
+# "open my simpsons tab on arc", "switch to the docs tab", "go to the inbox tab in Safari": a tab that is already open,
+# found by its title or address. A "new"/"next" tab is another thing (the `new` fact, keys).
+TAB_RE = re.compile(
+    r"\b(?:open|switch\s+to|go\s+to|show|bring\s+up|select|find)\s+(?:(?:my|the|that|a|an)\s+)?"
+    r"([a-z0-9][\w.' -]*?)\s+tab\b(?:\s+(?:on|in|using|with)\s+(?:the\s+)?"
+    r"([a-z]\w*(?:\s+(?!(?:and|then|to|so|but|for|please)\b)[a-z]\w*){0,2}))?", re.I)
+NOT_TAB_WORDS = {"new", "blank", "next", "previous", "another", "other", "last", "first", "current", "this", "my", "your",
+                 "browser", "web", "empty", "private", "incognito"}  # fmt: skip
+
+
+def _tab_match(goal: str):
+    """The first TAB_RE match whose words name a tab (not just "new" / "next"); quotes are dropped first."""
+    text = re.sub(r"[\"“”‘’]", "", goal)
+    for m in TAB_RE.finditer(text):
+        if content_words(m.group(1)) - NOT_TAB_WORDS:
+            return m
+    return None
+
+
+def tab_phrase(goal: str) -> str:
+    """The text of the goal the tab fact covers: "open my simpsons tab" (the browser after it is the app fact's)."""
+    m = _tab_match(goal)
+    if m is None:
+        return ""
+    text = re.sub(r"[\"“”‘’]", "", goal)
+    return text[m.start(): m.end(1) + len(re.match(r"\s+tab", text[m.end(1):]).group(0))]
+
+
+def tab_words(goal: str) -> str | None:
+    m = _tab_match(goal)
+    if m is None:
+        return None
+    return " ".join(w for w in tab_tokens(m.group(1)) if w in content_words(m.group(1)) and w not in NOT_TAB_WORDS)
+
+
+def _tab_facts(goal: str, apps: list[str]) -> list[Fact]:
+    """A `tab` fact (value = the words that name the tab), plus the `app` fact for the browser it says ("on arc")."""
+    m = _tab_match(goal)
+    if m is None:
+        return []
+    facts = [Fact("tab", tab_words(goal), m.start(1))]
+    words = (m.group(2) or "").split()
+    for n in range(len(words), 0, -1):
+        app = resolve_app(" ".join(words[:n]), apps)
+        if app and is_browser(app):
+            facts.append(Fact("app", app, m.start(2)))
+            break
+    return facts
+
+
+def tab_tokens(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9]+", text.lower())
+
+
+def tab_matches(words: str, title: str, url: str = "") -> bool:
+    """Every content word of `words` is a whole word, or (4+ letters) a prefix either way, of a word in the tab's
+    title or in its address (host and path)."""
+    wanted = tab_tokens(" ".join(content_words(words)))
+    if not wanted:
+        return False
+    parsed = urlparse(url) if url else None
+    have = set(tab_tokens(title)) | (set(tab_tokens((parsed.hostname or "") + " " + parsed.path)) if parsed else set())
+    for w in wanted:
+        if not any(t == w or (min(len(t), len(w)) >= 4 and (t.startswith(w) or w.startswith(t))) for t in have):
+            return False
+    return True
+
+
 def _click_facts(goal: str, apps: list[str], facts: list[Fact]) -> list[Fact]:
     """`click` facts: the object of click / press / tap / play / open when it is not an app, a site, a file or a "new"
     thing the other facts already cover. They hold after a verified click that was chosen for that object (the loop)."""
@@ -216,6 +284,8 @@ def _parse_facts(goal: str, apps: list[str]) -> list[Fact]:
     facts += [Fact("app", a, _at(goal, a)) for a in found]
     sites = _site_facts(goal, apps, found)
     searches = _search_facts(goal)
+    tabs = _tab_facts(goal, apps)
+    facts += [f for f in tabs if f not in facts]
     facts += sites + searches
     facts += _click_facts(goal, apps, facts)
     return facts
@@ -355,6 +425,9 @@ def _holds(fact: Fact, snap: Snapshot, facts: list[Fact] | None = None, since: f
         return _on_site(fact.value, snap.url, fact.alias)
     if fact.kind == "search":
         return _searched(fact.value, snap.url)
+    if fact.kind == "tab":
+        title = snap.page_title or snap.window_title
+        return tab_matches(fact.value, title, snap.url) if (title or snap.url) else None
     if fact.kind == "new":
         if fact.value not in DOC_NOUNS:
             return None  # nothing on screen says a new conversation is open; the loop remembers its New click
@@ -384,6 +457,8 @@ def _says(fact: Fact) -> str:
         return f"{fact.label()} site open"
     if fact.kind == "search":
         return f"a search for {fact.label()} done"
+    if fact.kind == "tab":
+        return f"the {fact.label()} tab in front"
     return f"window titled {fact.label()}" if fact.kind == "saved" else f"{fact.label()} in text area"
 
 
@@ -411,6 +486,8 @@ def _action(fact: Fact, facts: list[Fact] | None = None, snap: Snapshot | None =
             return (f'go to {fact.value}: search for "{fact.value}" in {field}, press return and open the official '
                     "site from the results")
         return f'go to {fact.value}: click {field}, type "{domain}" and press return'
+    if fact.kind == "tab":
+        return f"switch to the open tab named {fact.label()}"
     if fact.kind == "search":
         field = search_field(snap) if snap is not None else None
         if field is not None:
@@ -455,6 +532,8 @@ def decisive_facts(goal: str, apps: list[str] | None = None) -> list[Fact]:
         return []
     new = new_facts(goal)
     rest = SEARCH_RE.sub(" ", SAVE_RE.sub(" ", goal))
+    if any(f.kind == "tab" for f in facts):
+        rest = re.sub(r"[\"“”‘’]", "", rest).replace(tab_phrase(goal), " ")  # "open my x tab": the tab fact covers it
     for f in facts:
         if f.kind == "click":
             rest = re.sub(rf"\b(?:click(?:\s+on)?|press|tap|play|open)\s+(?:the\s+|a\s+|an\s+)?{re.escape(f.value)}", " ", rest, flags=re.I)
@@ -472,6 +551,7 @@ def decisive_facts(goal: str, apps: list[str] | None = None) -> list[Fact]:
     satisfied |= {"click", "press", "tap", "play", "open"} if any(f.kind == "click" for f in facts) else set()
     has_site = any(f.kind == "site" for f in facts)
     satisfied |= {"open", "go", "goto", "visit", "navigate", "browse"} if has_site else set()
+    satisfied |= {"open", "switch", "go", "show", "bring", "select", "find"} if any(f.kind == "tab" for f in facts) else set()
     satisfied |= {"search", "searching"} if any(f.kind == "search" for f in facts) else set()
     for w in words:
         if w not in satisfied and any(w.startswith(v) for v in ACTION_VERBS):
@@ -486,7 +566,7 @@ def decisive_facts(goal: str, apps: list[str] | None = None) -> list[Fact]:
 def failing_facts(facts: list[Fact], snap: Snapshot, since: float | None = None, known: dict | None = None) -> str:
     """Why `facts` don't hold on `snap`, for the note on a rejected `done`."""
     why = {"new": "no new {} is open", "app": "{} isn't in front", "text": "{} isn't in any text field",
-           "site": "{} isn't the open page", "search": "the search for {} hasn't been done",
+           "site": "{} isn't the open page", "tab": "the {} tab isn't in front", "search": "the search for {} hasn't been done",
            "click": "{} hasn't been clicked", "outline": "{} isn't done", "field": "{} isn't filled in", "submit": "the form hasn't been submitted"}  # fmt: skip
     out = []
     for f, ok in zip(facts, resolve(facts, snap, since, known)):
@@ -531,6 +611,8 @@ def pending_fact(facts: list[Fact], snap: Snapshot, seen: set | None = None, sin
 def rest_of_goal(goal: str, facts: list[Fact]) -> str:
     """The goal minus the phrases its facts account for (app, site, search, new-thing, save and quoted text)."""
     rest = SEARCH_RE.sub(" ", SAVE_RE.sub(" ", goal))
+    if any(f.kind == "tab" for f in facts):
+        rest = re.sub(r"[\"“”‘’]", "", rest).replace(tab_phrase(goal), " ")  # "open my x tab": the tab fact covers it
     for rx in (NEW_VERB_RE, NEW_IN_RE, NEW_DOC_RE):
         rest = rx.sub(" ", rest)
     for f in facts:

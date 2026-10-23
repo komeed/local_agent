@@ -70,7 +70,7 @@ They are false/heuristic only with `--jev cosine-*` while llama-server is down (
 ```
 Emitted when a phase of step `step` starts; `elapsed_s` is how long the previous phase took (null for the first). `stage` is
 one of `observing`, `reading_page` (the browser page is read through its JavaScript), `planning`, `selecting`, `acting`,
-`verifying`, and for the agent's own browser navigation `opening_tab`, `selecting_tab`, `searching`, `focusing_address_bar`, `typing_query`, `opening_result`, `waiting_for_page`. A phase that never
+`verifying`, and for the agent's own browser navigation `listing_tabs`, `opening_tab`, `selecting_tab`, `searching`, `focusing_address_bar`, `typing_query`, `opening_result`, `waiting_for_page`. A phase that never
 ends shows as the last `stage` event of a stuck run. Apps that don't know the type ignore it. `--verbose` prints them as text.
 
 ### `outline` and `replan`
@@ -163,7 +163,7 @@ declining ends the run with `reason: "declined: submit the form"`. A browser dia
 is done`, `Jev: the screen shows the goal done (p=0.97)`, `stopped: <plan or "N steps"> succeeded 3 times in a row`
 (completed work being redone; `success` is true when Jev rated the goal likely done along the way, with `; Jev rated
 the goal likely done` appended), `reached max steps (N)`, `N consecutive failed steps`, `dry run: stopped after one
-step`, and `cancelled`.
+step`, `unsure: <goal item>` (jev mode: two steps in a row where Jev's best option was below `jev_min_pick_p` (default 0.3, `--jev-min-p`), wasn't the checklist's next line and wasn't `done`, so nothing was done; the first such step is a record with `executed: false` and the note `unsure (p=0.xx): no option clearly fits; <top 3 options>`, and replans an outline), and `cancelled`.
 
 ### `error`
 ```json

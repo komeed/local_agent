@@ -80,14 +80,19 @@ def validate_outline(steps: list[str], goal: str, apps: list[str], done_values: 
     return cleaned, ""
 
 
+SWITCH_RE = re.compile(r"\b(?:open|switch\s+to|go\s+to|show|bring\s+up)\b.*\b(?:tab|window|page)\b", re.I)
+
+
 def single_action(goal: str, facts: list[Fact]) -> bool:
     """One short clause on an app or site ("on X click Y", "open X and search Y"): the facts and the planner cover it."""
     from local_agent.goal_facts import rest_of_goal
 
-    if not any(f.kind in ("app", "site") for f in facts):
-        return False
+    sequenced = re.search(r"\b(?:then|after|afterwards|next|finally)\b|[;,]", goal, re.I)
+    if not any(f.kind in ("app", "site", "tab") for f in facts):
+        # "open / switch to ... tab | window | page": one move to something that exists, whatever the app
+        return bool(SWITCH_RE.search(goal)) and len(goal.split()) <= 10 and not sequenced
     rest = rest_of_goal(goal, facts)
-    return len(rest.split()) <= 8 and not re.search(r"\b(?:then|after|afterwards|next|finally)\b|[;,]", goal, re.I)
+    return len(rest.split()) <= 8 and not sequenced
 
 
 def items_from_steps(steps: list[str], apps: list[str]) -> list[Fact]:

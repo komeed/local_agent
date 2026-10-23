@@ -261,6 +261,10 @@ def run(
         None, "--menu-actions/--no-menu-actions",
         help="Offer the app's menu commands as a planner action (default off: it scored lower on the 3B).",
     ),
+    jev_min_pick_p: float | None = typer.Option(
+        None, "--jev-min-p",
+        help="Jev mode: don't act on an option Jev rates below this probability unless it is the checklist's next line (default 0.3; 0 = off).",
+    ),
     log: Path | None = typer.Option(None, "--log", help="Write the step history as JSON here."),
     events: bool = typer.Option(
         False, "--events", help="Write JSON Lines events to stdout for apps (docs/APP_INTEGRATION.md); text goes to stderr."
@@ -280,7 +284,8 @@ def run(
 
     s = Settings.from_env(threshold=threshold, max_steps=max_steps, planner_model=model, planner_view=view,
                           planner_mode=planner, jev=jev, turbo=turbo or None, menu_actions=menu_actions,
-                          low_memory=low_memory, outline=outline, outline_model=outline_model)
+                          low_memory=low_memory, outline=outline, outline_model=outline_model,
+                          jev_min_pick_p=jev_min_pick_p)
     from local_agent.selector import catalog
 
     s = catalog.resolve(s)  # once, so `start` names the Jev model actually used

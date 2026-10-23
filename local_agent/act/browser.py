@@ -309,6 +309,7 @@ class TabInfo:
     index: int
     id: str  # "" when the browser's tabs have no id (Safari)
     url: str
+    title: str = ""  # the tab's title; "" when the browser doesn't report one
 
 
 def select_style(bundle_id: str) -> str:
@@ -332,6 +333,14 @@ tell application id "%(b)s"
 		try
 			set ids to id of tabs of window w
 		end try
+		set ts to {}
+		try
+			set ts to title of tabs of window w
+		on error
+			try
+				set ts to name of tabs of window w
+			end try
+		end try
 		repeat with i from 1 to (count of us)
 			set tid to ""
 			try
@@ -341,7 +350,11 @@ tell application id "%(b)s"
 			try
 				set u to (item i of us) as text
 			end try
-			set out to out & w & sep & i & sep & tid & sep & u & linefeed
+			set tt to ""
+			try
+				set tt to (item i of ts) as text
+			end try
+			set out to out & w & sep & i & sep & tid & sep & u & sep & tt & linefeed
 		end repeat
 	end repeat
 end tell
@@ -351,9 +364,9 @@ return out"""
 def parse_tabs(text: str) -> list[TabInfo]:
     tabs = []
     for line in (text or "").splitlines():
-        parts = line.split("\t", 3)
-        if len(parts) == 4 and parts[0].isdigit() and parts[1].isdigit():
-            tabs.append(TabInfo(int(parts[0]), int(parts[1]), parts[2], parts[3]))
+        parts = line.split("\t", 4)
+        if len(parts) >= 4 and parts[0].isdigit() and parts[1].isdigit():
+            tabs.append(TabInfo(int(parts[0]), int(parts[1]), parts[2], parts[3], parts[4].strip() if len(parts) > 4 else ""))
     return tabs
 
 
@@ -658,6 +671,9 @@ class Bridge:
             if name_or_bundle == bundle or name.lower() in name_or_bundle.lower():
                 return bundle if app_path(bundle) else None
         return None
+
+    def list_tabs(self, bundle: str) -> list[TabInfo]:
+        return list_tabs(bundle)
 
     def find_tab(self, bundle: str, site: str) -> TabInfo | None:
         from local_agent.goal_facts import _on_site

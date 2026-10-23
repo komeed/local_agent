@@ -40,6 +40,7 @@ from local_agent.goal_facts import (
     _action as action_for,
     check_facts,
     _holds,
+    tab_matches,
     checkable_facts,
     is_browser,
     open_command,
@@ -57,6 +58,7 @@ from local_agent.goal_facts import (
 from local_agent.history import NAVIGATION_KEYS, SCROLL_STUCK, StepRecord, loop_warning, repeated_cycle
 from local_agent.observe.menus import find_exact, menu_scope
 from local_agent.observe.models import SINGLE_LINE_ROLES, Snapshot, UIElement
+from local_agent.planner.jev_only import Unsure
 from local_agent.planner.qwen import PlannerError
 from local_agent.planner.schema import PlannerOutput
 from local_agent.safety import always_ask
@@ -91,6 +93,7 @@ class _Failed:
     ok: bool = False
 
 
+MAX_TAB_CHOICES = 16
 SECURE_NOTE = "typing into password fields is not allowed; the user must do this"
 
 
@@ -169,6 +172,7 @@ class Agent:
         self.form_plan: FormPlan | None = None
         self._declined: str | None = None  # set when the user declines the submit: the run ends
         self._submitting = False
+        self._unsure = 0  # consecutive jev-mode steps that found no option Jev was sure of
         self.checklist: list = []  # every fact of the goal, in goal order, for the planner's progress
 
     def run(self, goal: str) -> AgentResult:
@@ -185,6 +189,7 @@ class Agent:
         self.seen_facts, self.known_facts = set(), {}
         self._asked_overwrite: set = set()
         self._last_repeat, self._repeat_of = None, None
+        self._unsure = 0
         self.started = time.time()
         n = 0  # records so far (planner steps and the agent's own: opening the goal's app)
         self._stage(1, "observing")
@@ -193,6 +198,9 @@ class Agent:
         self.navigated: set = set()  # sites code already went to (opened or selected)
         if not self.dry_run:
             snap, n = self._open_goal_app(goal, snap, history, n)
+        snap, n, stop = self._open_goal_tab(goal, snap, history, n)
+        if stop is not None:
+            return stop
         if (stop := self._plan_form(goal, snap)) is not None:
             return stop
         self.outline_active, self.replans, self._item_failures = False, 0, {}
@@ -224,6 +232,9 @@ class Agent:
                     continue
                 return AgentResult(True, "planner reported the goal is done", history)
             history.append(rec)
+            if self._unsure >= 2:
+                self.hooks.on_record(rec)
+                return AgentResult(False, f"unsure: {self._unsure_item(snap)}", history)
             if self.outline_active and not self.dry_run and (stuck := self._track_outline(rec, snap, history)) is not None:
                 self.hooks.on_record(rec)
                 return stuck
@@ -337,6 +348,86 @@ class Agent:
         history.append(rec)
         self.hooks.on_record(rec)
         return new or self.hooks.observe(), n + 1
+
+    def _open_goal_tab(self, goal: str, snap: Snapshot, history: list[StepRecord], n: int):
+        """A goal that names an open tab ("open my simpsons tab on arc"): list the browser's tabs, find the ones whose
+        title or address has every word, and select one (Jev chooses between several). Never opens or navigates a tab.
+        Returns (snapshot, n, result): a result only when the tab fact settles the goal or a dry run stops."""
+        fact = next((f for f in self.checklist if f.kind == "tab"), None)
+        bridge = self.hooks.browser
+        if fact is None or bridge is None or n >= self.s.max_steps or _holds(fact, snap) is True:
+            return snap, n, None
+        app = next((f.value for f in self.checklist if f.kind == "app" and is_browser(f.value)), snap.app)
+        bundle = bridge.bundle_for(app)
+        if not bundle:
+            return snap, n, None
+        self._stage(n + 1, "listing_tabs")
+        note = f"opened by the agent (goal names the tab {fact.label()}); "
+        try:
+            tabs = bridge.list_tabs(bundle)
+        except BrowserError as e:
+            return self._tab_record(StepRecord(n + 1, "list the open tabs"), note + f"tabs unavailable ({e.kind}: {e})",
+                                    snap, history, n)
+        found = [t for t in tabs if tab_matches(fact.value, t.title, t.url)]  # front window's tabs first
+        if not found:
+            return self._tab_record(StepRecord(n + 1, "list the open tabs"),
+                                    note + f'no open tab matches "{fact.value}"', snap, history, n)
+        tab, why = self._pick_tab(goal, fact, found)
+        title = tab.title or urlparse(tab.url).hostname or tab.url
+        plan = PlannerOutput(done=False, reasoning=f"the goal names the tab {fact.label()}", action="terminal",
+                             command=f'(switch to the "{title}" tab)')  # fmt: skip
+        self.timing, self.screen = {}, None
+        self.hooks.on_plan(n + 1, snap, plan)
+        rec = StepRecord(n + 1, plan.summary())
+        if self.dry_run:
+            rec.note = note + f'dry-run: would switch to the "{title}" tab{why}'
+            history.append(rec)
+            self.hooks.on_record(rec)
+            return snap, n + 1, AgentResult(True, "dry run: stopped after one step", history)
+        self._stage(n + 1, "selecting_tab")
+        try:
+            bridge.select_tab(bundle, tab)
+        except BrowserError as e:
+            return self._tab_record(rec, note + f"could not switch ({e.kind}: {e})", snap, history, n)
+        rec.executed, rec.verified = True, True
+        rec.note = note + f'switched to the "{title}" tab{why}'
+        probe = Snapshot(snap.app, snap.bundle_id, snap.pid, snap.window_title, [], url=tab.url, page_title=tab.title)
+        if _holds(fact, probe) is True:
+            self.known_facts[fact] = True
+        after = snap
+        for _ in range(3):  # the window title and page follow the selection a moment later
+            self._stage(n + 1, "observing")
+            self.hooks.sleep(self.s.settle_s)
+            after = self.hooks.observe()
+            if _holds(fact, after) is True:
+                break
+        history.append(rec)
+        self.hooks.on_record(rec)
+        stop = None
+        if check_facts(self.facts, after, self.started, self.known_facts):
+            stop = AgentResult(True, f"goal facts hold: {describe_facts(self.facts)}", history)
+        return after, n + 1, stop
+
+    def _tab_record(self, rec: StepRecord, note: str, snap: Snapshot, history: list[StepRecord], n: int):
+        """A tab step that changed nothing: keep its note for the planner and carry on."""
+        rec.note = note
+        history.append(rec)
+        self.hooks.on_record(rec)
+        return snap, n + 1, None
+
+    def _pick_tab(self, goal: str, fact: Fact, found: list):
+        """(tab, note): the only match; else Jev's choice among their titles; else the first (front window first)."""
+        if len(found) == 1:
+            return found[0], ""
+        pick = getattr(self.selector, "pick_option", None)
+        options = {f"t{i}": (t.title or t.url)[:80] for i, t in enumerate(found[:MAX_TAB_CHOICES])}
+        try:
+            answer = pick(f"GOAL: {goal}", f'Which open tab does the goal mean ("{fact.value}")?', options) if pick else None
+        except (JevError, httpx.HTTPError):
+            answer = None
+        if answer is not None and answer.choice in options:
+            return found[int(answer.choice[1:])], f" (Jev chose among {len(options)} matching tabs, p={answer.probability:.2f})"
+        return found[0], f" ({len(found)} tabs match; took the first, front window first)"
 
     def _open_goal_site(self, goal: str, snap: Snapshot, history: list[StepRecord], n: int):
         """When the next checklist item is a site we aren't on, go there in code (once per site per run): select the
@@ -745,9 +836,11 @@ class Agent:
             extra = {"snap": snap} if getattr(self.planner, "needs_snapshot", False) else {}
             plan = self.planner.next_step(goal, self._scope(snap), history, screen, **extra)
         except (PlannerError, httpx.HTTPError) as e:
+            self._unsure = self._unsure + 1 if isinstance(e, Unsure) else 0
             return StepRecord(n, "planner error", note=str(e)[:300]), snap
         finally:
             self.timing["planner_s"] = time.monotonic() - t0
+        self._unsure = 0
         self.hooks.on_plan(n, snap, plan)
         if plan.done:
             return None, snap
@@ -941,6 +1034,8 @@ class Agent:
         reason = None
         if NO_SHELL in rec.note:
             reason = "jev found no listed action"
+        elif self._unsure:
+            reason = "jev unsure which option fits"
         elif self._item_failures.get(item, 0) >= 2:
             reason = "two failed steps on one item"
         elif loop_warning(history):
@@ -948,6 +1043,10 @@ class Agent:
         if reason is None:
             return None
         return self._replan(reason, item, history, snap)
+
+    def _unsure_item(self, snap: Snapshot) -> str:
+        item = pending_fact(self.checklist, snap, self.seen_facts, self.started, self.known_facts) if self.checklist else None
+        return action_for(item, self.checklist, snap) if item is not None else self.goal
 
     def _replan(self, reason: str, item: Fact, history: list[StepRecord], snap: Snapshot):
         from local_agent.outline import items_from_steps, validate_outline

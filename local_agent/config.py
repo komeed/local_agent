@@ -96,6 +96,9 @@ class Settings:
     # Stop when the same step (or block of up to 3 steps) succeeds this many times in a row: completed work being
     # redone. The planner is warned one repeat earlier.
     max_repeated_successes: int = 3
+    # Jev mode: when Jev's best option has probability below this, isn't the checklist's own next line and isn't `done`,
+    # nothing is done (the step fails with an "unsure" note); the second such step in a row ends the run. 0 turns it off.
+    jev_min_pick_p: float = 0.3
     # AX tree walk limits.
     max_depth: int = 40
     max_elements: int = 3000

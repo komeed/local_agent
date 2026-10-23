@@ -18,14 +18,14 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from local_agent.goal_facts import quoted_strings
+from local_agent.goal_facts import ACTION_VERBS, FILLER_WORDS, QUOTE, content_words, parse_facts, quoted_strings
 from local_agent.history import StepRecord
 from local_agent.observe.models import SINGLE_LINE_ROLES, Snapshot, UIElement
 from local_agent.planner.kind import DONE_MIN_P, kind_state
 from local_agent.planner.qwen import PlannerError
 from local_agent.planner.schema import PlannerOutput
 from local_agent.ranking import date_fragment
-from local_agent.selector.prefilter import rank
+from local_agent.selector.prefilter import _parts, rank, score
 
 MAX_CLICKS = 12
 MAX_TYPE_FIELDS = 4
@@ -39,6 +39,12 @@ QUESTION = ("Which action is the best next step toward the user's goal? Work on 
             "one, deal with an open dialog or alert first, and never repeat a step that failed.")  # fmt: skip
 TEXT_FIELD_ROLES = SINGLE_LINE_ROLES | {"AXTextArea"}
 KEY_OPTIONS = ("return", "escape", "tab")
+NEXT_WEIGHT = 0.5  # the checklist's next line counts half as much as the goal's own words when ranking clicks
+GENERIC_WORDS = {"my", "your", "our", "tab", "tabs", "window", "windows", "page", "pages", "button", "link", "site"}
+
+
+class Unsure(PlannerError):
+    """Jev's best option is below `jev_min_pick_p` and isn't the checklist's own next line: the step does nothing."""
 
 
 @dataclass
@@ -47,6 +53,7 @@ class Option:
     label: str  # what Jev compares
     plan: PlannerOutput | None  # None: "none of these" or done handled by the caller
     kind: str = ""  # done | click | type | key | scroll | menu | none
+    from_checklist: bool = False  # built from the checklist's own next line
 
 
 def _plan(**kw) -> PlannerOutput:
@@ -117,6 +124,35 @@ def checklist_actions(next_line: str, snap: Snapshot) -> list[tuple[str, Planner
     return out
 
 
+def distinctive_words(goal: str) -> list[str]:
+    """The goal's content words minus its verbs, filler, generic nouns ("tab", "my"), quoted text (that is typed, not
+    clicked) and the names of the apps it mentions: what a control would be called to be the one the goal means."""
+    app_words = {w for f in parse_facts(goal) if f.kind == "app" for w in re.findall(r"[a-z0-9]+", f.value.lower())}
+    lower = goal.lower()
+    words = sorted(content_words(re.sub(QUOTE, " ", goal)), key=lower.find)  # in goal order
+    skip = FILLER_WORDS | GENERIC_WORDS | app_words
+    return [w for w in words if w not in skip and not any(w.startswith(v) for v in ACTION_VERBS)]
+
+
+def rank_clicks(goal: str, next_line: str, pool: list[UIElement]) -> list[UIElement]:
+    """The controls offered as click options: ranked by the goal's distinctive words first and by the checklist's next
+    line second (browser chrome and page controls compete alike), at most MAX_CLICKS plus ties; every control whose own
+    text has a distinctive goal word is kept even beyond that cut."""
+    words = " ".join(distinctive_words(goal))
+    scores = [(score(words, e)[1], score(next_line, e)[1]) if words else (0.0, score(next_line, e)[1]) for e in pool]
+    if not any(g for g, _ in scores):  # the goal's words name no control: the old ranking over both texts
+        return rank(f"{next_line} {goal}".strip(), pool, MAX_CLICKS, MAX_CLICKS * 3).kept
+    combined = [round(g + NEXT_WEIGHT * n, 6) for g, n in scores]
+    order = sorted(range(len(pool)), key=lambda i: (-combined[i], i))
+    if len(pool) <= MAX_CLICKS:
+        return pool
+    cutoff = combined[order[MAX_CLICKS - 1]]
+    keep = [i for i in order if combined[i] > cutoff or (combined[i] == cutoff and cutoff > 0)][: MAX_CLICKS * 3]
+    keep = order[:MAX_CLICKS] if cutoff <= 0 else keep
+    named = [i for i in range(len(pool)) if _parts(words, pool[i])[0] > 0]
+    return [pool[i] for i in sorted(set(keep) | set(named))]
+
+
 def build_options(goal: str, scope: dict, history: list[StepRecord], snap: Snapshot | None, screen: str | None,
                   menus: bool = False, hint_p: float = 0.5) -> list[Option]:
     """The candidate next actions, in a stable order, each with a unique key."""
@@ -126,12 +162,14 @@ def build_options(goal: str, scope: dict, history: list[StepRecord], snap: Snaps
     hinted = bool(history) and (history[-1].goal_probability or 0) >= hint_p  # Jev's goal check says it may be done
     if (progress and not next_line) or (not progress and any(h.succeeded for h in history)) or hinted:
         options.append(("done: the goal is already accomplished", PlannerOutput(done=True, reasoning="chosen from the listed actions"), "done"))
+    own: set[str] = set()  # labels of the options the checklist's next line spells out
     if next_line:
-        options += checklist_actions(next_line, snap) if snap is not None else []
+        listed = checklist_actions(next_line, snap) if snap is not None else []
+        own = {label for label, _, _ in listed}
+        options += listed
     if snap is not None:
-        target = f"{next_line} {goal}".strip()
         pool = [e for e in snap.elements if e.interactive and e.enabled and _name(e)]
-        top = rank(target, pool, MAX_CLICKS, MAX_CLICKS * 3).kept  # ties with the last kept are kept too
+        top = rank_clicks(goal, next_line, pool)
         seen: set[str] = set()
         counts: dict[str, int] = {}
         for e in top:
@@ -168,7 +206,7 @@ def build_options(goal: str, scope: dict, history: list[StepRecord], snap: Snaps
         if label in labels:
             continue
         labels.add(label)
-        deduped.append(Option(f"o{len(deduped)}", label, plan, kind))
+        deduped.append(Option(f"o{len(deduped)}", label, plan, kind, label in own))
     return deduped
 
 
@@ -215,5 +253,11 @@ class JevPlanner:
         self.last_kind = (option.label, p)
         if option.kind == "none" or option.plan is None:
             raise PlannerError(NO_SHELL)
+        floor = getattr(self.settings, "jev_min_pick_p", 0.0)
+        if p < floor and option.kind != "done" and not option.from_checklist:
+            ranked = sorted(answer.probabilities or {}, key=lambda k: -answer.probabilities[k])
+            labels = {o.key: o.label for o in options}
+            top = "; ".join(labels[k] for k in ranked[:3] if k in labels)
+            raise Unsure(f"unsure (p={p:.2f}): no option clearly fits; {top}"[:300])
         out = option.plan.model_copy(update={"reasoning": f"Jev chose: {option.label} (p={p:.2f})"})
         return out

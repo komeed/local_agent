@@ -283,3 +283,11 @@ the planner returns `done`, `max_steps`, or `max_consecutive_failures`.
   Outlines are skipped for click goals and short single actions, and validated (`outline.validate_outline`: dedupe,
   reject mostly-duplicate or invented-app outlines; event field `rejected`). Jev mode offers `done` once the last goal
   probability ≥ `goal_hint_threshold`. The loop guard compares steps by name and role (`history.step_key`), not id.
+- **Tab goals, goal-word ranking, unsure rule**: "open/switch to <words> tab [on <Browser>]" is a `tab` fact (not
+  "new/next tab"; holds when the front tab's title or URL has every word, whole word or 4+ letter prefix).
+  `Agent._open_goal_tab` (after `_open_goal_app`) lists tabs (`Bridge.list_tabs`, `TabInfo.title`) and selects the one
+  match in code (Jev picks among several, else the first, front window first); no match leaves a note and never opens a
+  tab. `jev_only.rank_clicks` ranks by the goal's distinctive words first, the checklist line at half weight, and
+  always keeps controls named with one. `outline.single_action` covers "open/switch to … tab|window|page".
+  `Settings.jev_min_pick_p` (0.3, `--jev-min-p`): a jev-mode pick below it that isn't `done` or the checklist's next
+  line does nothing (`Unsure`); the first replans an outline, the second in a row ends the run `unsure: <goal item>`.

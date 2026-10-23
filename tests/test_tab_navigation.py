@@ -146,3 +146,8 @@ def test_front_window_must_be_the_window_ax_says_is_frontmost(monkeypatch):
     assert ax_tree._web_ready("com.apple.TextEdit", "x") == (False, "")
     monkeypatch.setattr(browser, "status", lambda b: "no_permission")
     assert ax_tree._web_ready(arc, "Dashboard") == (False, "")
+
+
+def test_parse_tabs_reads_the_title_last():
+    text = "1\t1\tID1\thttps://a.org/\tThe A page\n1\t2\t\thttps://b.org/x\t\n"
+    assert browser.parse_tabs(text) == [TabInfo(1, 1, "ID1", "https://a.org/", "The A page"), TabInfo(1, 2, "", "https://b.org/x")]
