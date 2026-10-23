@@ -1,0 +1,332 @@
+{
+ "url": "file:///evals/fixtures/web/web_form_labels.html",
+ "title": "Checkout",
+ "inner_width": 2560,
+ "inner_height": 1440,
+ "candidates": 16,
+ "listed": 16,
+ "interactive_in_view": 9,
+ "more": 0,
+ "elements": [
+  {
+   "web_id": "la1",
+   "role": "textbox",
+   "name": "Full name",
+   "value": "",
+   "placeholder": "",
+   "tag": "input",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    112.9,
+    110.4,
+    174.5,
+    23.5
+   ],
+   "path": "AXGroup:Shipping",
+   "context": "section \"Checkout\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la2",
+   "role": "textbox",
+   "name": "City",
+   "value": "",
+   "placeholder": "",
+   "tag": "input",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    326.5,
+    110.4,
+    174.5,
+    23.5
+   ],
+   "path": "AXGroup:Shipping",
+   "context": "section \"Checkout\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la3",
+   "role": "textbox",
+   "name": "ZIP code",
+   "value": "",
+   "placeholder": "",
+   "tag": "input",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    509,
+    110.4,
+    174.5,
+    23.5
+   ],
+   "path": "AXGroup:Shipping",
+   "context": "section \"Checkout\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la4",
+   "role": "textbox",
+   "name": "Country",
+   "value": "",
+   "placeholder": "Country",
+   "tag": "input",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    691.5,
+    110.4,
+    174.5,
+    23.5
+   ],
+   "path": "AXGroup:Shipping",
+   "context": "section \"Checkout\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la5",
+   "role": "textbox",
+   "name": "Full name",
+   "value": "",
+   "placeholder": "",
+   "tag": "input",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    112.9,
+    180.1,
+    174.5,
+    23.5
+   ],
+   "path": "AXGroup:Billing",
+   "context": "section \"Checkout\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la6",
+   "role": "textbox",
+   "name": "City",
+   "value": "",
+   "placeholder": "",
+   "tag": "input",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    326.5,
+    180.1,
+    174.5,
+    23.5
+   ],
+   "path": "AXGroup:Billing",
+   "context": "section \"Checkout\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la7",
+   "role": "textbox",
+   "name": "ZIP code",
+   "value": "",
+   "placeholder": "",
+   "tag": "input",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    509,
+    180.1,
+    174.5,
+    23.5
+   ],
+   "path": "AXGroup:Billing",
+   "context": "section \"Checkout\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la8",
+   "role": "textbox",
+   "name": "Country",
+   "value": "",
+   "placeholder": "Country",
+   "tag": "input",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    691.5,
+    180.1,
+    174.5,
+    23.5
+   ],
+   "path": "AXGroup:Billing",
+   "context": "section \"Checkout\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la9",
+   "role": "button",
+   "name": "Place order",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    18,
+    226.9,
+    94.1,
+    23.5
+   ],
+   "path": "",
+   "context": "section \"Checkout\"",
+   "interactive": true
+  },
+  {
+   "web_id": "",
+   "role": "heading",
+   "name": "",
+   "value": "Checkout",
+   "placeholder": "",
+   "tag": "h1",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    16,
+    30.1,
+    2528,
+    35.5
+   ],
+   "path": "",
+   "context": "",
+   "interactive": false
+  },
+  {
+   "web_id": "",
+   "role": "text",
+   "name": "",
+   "value": "Shipping",
+   "placeholder": "",
+   "tag": "legend",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    45.3,
+    85.7,
+    64.1,
+    17.5
+   ],
+   "path": "AXGroup:Shipping",
+   "context": "",
+   "interactive": false
+  },
+  {
+   "web_id": "",
+   "role": "text",
+   "name": "",
+   "value": "Full name",
+   "placeholder": "",
+   "tag": "label",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    45.3,
+    113.4,
+    65.7,
+    17.5
+   ],
+   "path": "AXGroup:Shipping",
+   "context": "",
+   "interactive": false
+  },
+  {
+   "web_id": "",
+   "role": "text",
+   "name": "",
+   "value": "City",
+   "placeholder": "",
+   "tag": "label",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    293.4,
+    113.4,
+    209.6,
+    17.5
+   ],
+   "path": "AXGroup:Shipping",
+   "context": "",
+   "interactive": false
+  },
+  {
+   "web_id": "",
+   "role": "text",
+   "name": "",
+   "value": "Billing",
+   "placeholder": "",
+   "tag": "legend",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    45.3,
+    155.3,
+    45.1,
+    17.5
+   ],
+   "path": "AXGroup:Billing",
+   "context": "",
+   "interactive": false
+  },
+  {
+   "web_id": "",
+   "role": "text",
+   "name": "",
+   "value": "Full name",
+   "placeholder": "",
+   "tag": "label",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    45.3,
+    183.1,
+    65.7,
+    17.5
+   ],
+   "path": "AXGroup:Billing",
+   "context": "",
+   "interactive": false
+  },
+  {
+   "web_id": "",
+   "role": "text",
+   "name": "",
+   "value": "City",
+   "placeholder": "",
+   "tag": "label",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    293.4,
+    183.1,
+    209.6,
+    17.5
+   ],
+   "path": "AXGroup:Billing",
+   "context": "",
+   "interactive": false
+  }
+ ]
+}

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Checkout</title><style>body{font:15px system-ui;margin:0}header,main,section,nav{padding:10px 16px}button,input,select,textarea{font:inherit;margin:2px}fieldset{margin:8px 16px}</style></head>
+<body>
+<main><h1>Checkout</h1><form onsubmit="return false">
+<fieldset><legend>Shipping</legend>
+<label for="s-name">Full name</label><input id="s-name">
+<label>City <input name="s-city"></label>
+<input aria-label="ZIP code" name="s-zip">
+<input placeholder="Country" name="s-country"></fieldset>
+<fieldset><legend>Billing</legend>
+<label for="b-name">Full name</label><input id="b-name">
+<label>City <input name="b-city"></label>
+<input aria-label="ZIP code" name="b-zip">
+<input placeholder="Country" name="b-country"></fieldset>
+<button type="submit">Place order</button></form></main>
+</body></html>

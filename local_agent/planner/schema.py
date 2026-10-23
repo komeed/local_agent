@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-ActionType = Literal["click", "double_click", "right_click", "type", "shortcut", "scroll", "terminal"]
+ActionType = Literal["click", "double_click", "right_click", "type", "shortcut", "scroll", "terminal", "menu"]
 # Actions whose target must be resolved to a concrete UI element by Jev.
 ELEMENT_ACTIONS = {"click", "double_click", "right_click"}
 
@@ -39,7 +39,8 @@ class PlannerOutput(BaseModel):
     keys: str | None = Field(default=None, description="Shortcut like 'cmd+n' or 'return'. Required for 'shortcut'.")
     direction: Literal["up", "down", "left", "right"] | None = Field(default=None, description="For 'scroll'.")
     command: str | None = Field(
-        default=None, description="Shell command to run in the terminal. Required when action is 'terminal'."
+        default=None, description="Shell command to run in the terminal (action 'terminal'), or the menu path from menu_commands, "
+        "e.g. 'File > Save As…' (action 'menu'). Required for both."
     )
 
     @model_validator(mode="after")
@@ -50,6 +51,13 @@ class PlannerOutput(BaseModel):
             raise ValueError("action is required when done is false")
         if self.action == "terminal" and not (self.command and self.command.strip()):
             raise ValueError("action 'terminal' requires a non-empty 'command'")
+        if self.action == "menu" and not (self.command and self.command.strip()):
+            # Small models put the path where they put other values; take the first non-empty one.
+            self.command = next((v for v in (self.target.description if self.target else "", self.text, self.keys)
+                                 if v and ">" in v), None) or next(
+                (v for v in (self.target.description if self.target else "", self.text, self.keys) if v), None)
+        if self.action == "menu" and not (self.command and self.command.strip()):
+            raise ValueError("action 'menu' requires 'command' (a path from menu_commands)")
         if self.action == "type" and not self.text:
             raise ValueError("action 'type' requires 'text'")
         if self.action == "shortcut" and not (self.keys and self.keys.strip()):
@@ -85,5 +93,5 @@ class PlannerOutput(BaseModel):
         if self.direction and self.action == "scroll":
             bits.append(self.direction)
         if self.command:
-            bits.append(f"command={self.command!r}")
+            bits.append(f"{'menu' if self.action == 'menu' else 'command'}={self.command!r}")
         return " ".join(bits)

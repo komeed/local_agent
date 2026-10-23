@@ -47,7 +47,7 @@ def test_tournament_600(big_snapshot):
     target = "e437"
     jev, requests = fake_jev(lambda names: target if target in names else names[0])
     jev.settings.prefilter_top_k = 0
-    sel = jev.select("press 437", big_snapshot, click("AXButton", "Button 437"))
+    sel = jev.select("press 437", big_snapshot, click("AXButton", "button 437 in the grid"))
     assert sel.element.id == 437
     assert sel.candidates == 600 and sel.rounds == 2
     first, final = requests
@@ -60,7 +60,7 @@ def test_tournament_600(big_snapshot):
 
 def test_single_round_when_small(textedit):
     jev, requests = fake_jev(lambda names: "e5" if "e5" in names else names[0])
-    sel = jev.select("open file menu", textedit, click("AXMenuBarItem", "File menu"))
+    sel = jev.select("open file menu", textedit, click("AXMenuBarItem", "File menu at the top"))
     assert sel.element.title == "File" and sel.rounds == 1
     assert set(requests[0]["questions"]["pick_0"]["criteria"]) == {"e5", "e6"}
 
@@ -108,17 +108,17 @@ def test_jevk5_backend_selects(textedit):
 
     model = FakeJevK5()
     jev = JevK5Client(Settings(), model=model)
-    sel = jev.select("open file menu", textedit, click("AXMenuBarItem", "File menu"))
+    sel = jev.select("open file menu", textedit, click("AXMenuBarItem", "File menu at the top"))
     assert sel.element.title == "File" and sel.probability == pytest.approx(0.95)
     assert jev.verify("g", click("AXMenuBarItem", "File"), sel.element, textedit, textedit) == pytest.approx(0.9)
 
 
 def test_prefilter_shrinks_tournament(big_snapshot):
     jev, requests = fake_jev(lambda names: "e437" if "e437" in names else names[0])
-    sel = jev.select("press 437", big_snapshot, click("AXButton", "Button 437"))
+    sel = jev.select("press 437", big_snapshot, click("AXButton", "button 437 in the grid"))
     assert sel.element.id == 437
-    # "437" matches one title, "button" all of them (role + text): top 32 survive, one round.
-    assert sel.candidates == 32 and sel.rounds == 1
+    # "437" matches one title, "button" all of them: the 599 tied at the cutoff are kept up to prefilter_max_k.
+    assert sel.candidates == 128 and sel.rounds == 1
 
 
 def test_make_selector():
@@ -126,5 +126,27 @@ def test_make_selector():
 
     assert isinstance(make_selector(Settings(jev_backend="jevk5")), JevK5Client)
     assert type(make_selector(Settings(jev_backend="openjev"))) is JevClient
+    from local_agent.selector.cosine import CosineClient
+
+    assert isinstance(make_selector(Settings(jev="cosine-nomic")), CosineClient)
     with pytest.raises(ValueError):
         make_selector(Settings(jev_backend="nope"))
+
+
+def test_planner_pick_guard():
+    from evals.selector_cases import in_row, invoice_list, invoice_name
+    from local_agent.selector.jev import planner_pick
+
+    snap = invoice_list()
+    wrong = next(e for e in snap.elements if in_row(invoice_name(0), title="Delete")(e))
+    right = next(e for e in snap.elements if in_row(invoice_name(24), title="Delete")(e))
+
+    def step(el_id, desc):
+        return PlannerOutput(done=False, reasoning="r", action="click",
+                             target={"id": el_id, "role": "AXButton", "description": desc})  # fmt: skip
+
+    overruled = planner_pick(snap, step(wrong.id, "Delete button for invoice-0425"))
+    assert overruled.selection is None and overruled.overruled == wrong.id and "one of 50" in overruled.note
+    assert planner_pick(snap, step(right.id, "Delete button for invoice-0425")).selection.element is right
+    assert planner_pick(snap, step(wrong.id, "Delete button")).selection.element is wrong  # nothing better to go on
+    assert planner_pick(snap, step(wrong.id, "")).selection.element is wrong

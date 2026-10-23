@@ -1,0 +1,72 @@
+{
+ "url": "file:///evals/fixtures/web/web_hidden_dupes.html",
+ "title": "Sign in",
+ "inner_width": 2560,
+ "inner_height": 1440,
+ "candidates": 8,
+ "listed": 3,
+ "interactive_in_view": 2,
+ "more": 0,
+ "elements": [
+  {
+   "web_id": "la1",
+   "role": "button",
+   "name": "Sign in",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    18,
+    142.7,
+    62.2,
+    23.5
+   ],
+   "path": "",
+   "context": "section \"Welcome back\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la2",
+   "role": "link",
+   "name": "Create account",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    86.2,
+    145.7,
+    104.8,
+    17.5
+   ],
+   "path": "",
+   "context": "section \"Welcome back\"",
+   "interactive": true
+  },
+  {
+   "web_id": "",
+   "role": "heading",
+   "name": "",
+   "value": "Welcome back",
+   "placeholder": "",
+   "tag": "h1",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    16,
+    30.1,
+    2528,
+    35.5
+   ],
+   "path": "",
+   "context": "",
+   "interactive": false
+  }
+ ]
+}

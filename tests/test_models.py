@@ -1,4 +1,4 @@
-from local_agent.observe.models import Snapshot
+from local_agent.observe.models import Frame, Snapshot, UIElement
 
 
 def test_round_trip(textedit):
@@ -27,7 +27,7 @@ def test_scope_is_compact(textedit):
 
 def test_describe_is_bounded(textedit):
     for e in textedit.elements:
-        assert 0 < len(e.describe()) <= 160
+        assert 0 < len(e.describe()) <= 200
     assert "disabled" in textedit.elements[7].describe()
 
 
@@ -44,3 +44,18 @@ def test_selection_is_visible_to_jev(textedit):
     before = area.describe()
     area.selected = "Hello world"
     assert area.describe() != before and 'selected="Hello world"' in area.describe()
+
+
+def test_describe_names_container_and_context():
+    e = UIElement(id=1, role="AXTextField", path="AXWindow:Checkout > AXGroup:Billing address > AXGroup",
+                  context='label "City"', frame=Frame(200, 300, 250, 22))  # fmt: skip
+    text = e.describe()
+    assert 'label "City"' in text and 'in Group "Billing address"' in text and "at (200,300)" in text
+    assert UIElement(id=2, role="AXButton", path="AXWindow:W > AXRow").describe() == 'AXButton in Window "W"'
+    assert UIElement(id=3, role="AXButton", path="AXRow").describe() == "AXButton in AXRow"
+
+
+def test_surroundings_skip_window_and_markers():
+    e = UIElement(id=1, role="AXButton", path="AXWindow:Inbox > AXGroup:Sidebar > AXRow", context='row "invoice-0425"')
+    assert e.surroundings() == "invoice-0425 Sidebar"
+    assert UIElement.from_dict(e.to_dict()).context == 'row "invoice-0425"'

@@ -11,7 +11,7 @@ from local_agent.planner.choice import NOT_LISTED, ChoicePlanner, history_lines,
 from local_agent.planner.qwen import PlannerError, QwenPlanner, make_planner
 
 
-def _planner(responses, status=200):
+def _planner(responses, status=200, **settings):
     calls = []
 
     def handler(request):
@@ -22,7 +22,7 @@ def _planner(responses, status=200):
         return httpx.Response(200, json={"message": {"content": responses.pop(0)}, "prompt_eval_count": 900})
 
     client = httpx.Client(base_url="http://ollama", transport=httpx.MockTransport(handler))
-    return ChoicePlanner(Settings(planner_mode="choice"), client=client), calls
+    return ChoicePlanner(Settings(planner_mode="choice", **settings), client=client), calls
 
 
 @pytest.fixture
@@ -126,3 +126,12 @@ def test_history_lines_show_element_and_result():
 def test_make_planner():
     assert type(make_planner(Settings())) is QwenPlanner
     assert type(make_planner(Settings(planner_mode="choice"))) is ChoicePlanner
+
+
+def test_menu_kind_asks_for_a_path_from_the_enabled_commands(textedit):
+    scope = {**textedit.scope(), "menu_commands": ["File > New [cmd+n]", "File > Save As… [cmd+shift+s]", "File [menu]"]}
+    planner, calls = _planner(['{"kind": "menu"}', '{"command": "File > Save As…"}'], menu_actions=True)
+    plan = planner.next_step("save as", scope, [])
+    assert plan.action == "menu" and plan.command == "File > Save As…"
+    schema = calls[1]["format"]["properties"]["command"]
+    assert schema["enum"] == ["File > New", "File > Save As…"]

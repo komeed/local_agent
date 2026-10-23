@@ -1,0 +1,172 @@
+{
+ "url": "file:///evals/fixtures/web/web_search_field.html",
+ "title": "Docs search",
+ "inner_width": 2560,
+ "inner_height": 1440,
+ "candidates": 8,
+ "listed": 8,
+ "interactive_in_view": 5,
+ "more": 0,
+ "elements": [
+  {
+   "web_id": "la1",
+   "role": "searchbox",
+   "name": "Search the docs",
+   "value": "",
+   "placeholder": "Search the docs",
+   "tag": "input",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    18,
+    87.7,
+    260,
+    23.5
+   ],
+   "path": "",
+   "context": "section \"Acme Docs\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la2",
+   "role": "button",
+   "name": "Search",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    282,
+    87.7,
+    63.7,
+    23.5
+   ],
+   "path": "",
+   "context": "section \"Acme Docs\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la3",
+   "role": "link",
+   "name": "Guide",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    32,
+    123.2,
+    40.3,
+    17.5
+   ],
+   "path": "AXGroup:Main",
+   "context": "section \"Acme Docs\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la4",
+   "role": "link",
+   "name": "API",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    76.3,
+    123.2,
+    23,
+    17.5
+   ],
+   "path": "AXGroup:Main",
+   "context": "section \"Acme Docs\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la5",
+   "role": "link",
+   "name": "FAQ",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    103.2,
+    123.2,
+    28.5,
+    17.5
+   ],
+   "path": "AXGroup:Main",
+   "context": "section \"Acme Docs\"",
+   "interactive": true
+  },
+  {
+   "web_id": "",
+   "role": "heading",
+   "name": "",
+   "value": "Acme Docs",
+   "placeholder": "",
+   "tag": "h1",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    16,
+    30.1,
+    2528,
+    35.5
+   ],
+   "path": "",
+   "context": "",
+   "interactive": false
+  },
+  {
+   "web_id": "",
+   "role": "heading",
+   "name": "",
+   "value": "Welcome",
+   "placeholder": "",
+   "tag": "h2",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    16,
+    189.4,
+    2528,
+    26.5
+   ],
+   "path": "",
+   "context": "",
+   "interactive": false
+  },
+  {
+   "web_id": "",
+   "role": "text",
+   "name": "",
+   "value": "Browse the guides or search for a topic.",
+   "placeholder": "",
+   "tag": "p",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    16,
+    234.5,
+    2528,
+    17.5
+   ],
+   "path": "",
+   "context": "",
+   "interactive": false
+  }
+ ]
+}

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Create your account</title>
+<style>body{font:15px system-ui;margin:0}main{padding:16px}label{display:block;margin-top:8px}input,select,button{font:inherit;margin:2px}</style></head>
+<body>
+<main><h1>Create your account</h1>
+<form id="signup" onsubmit="return false">
+<label for="n">Full name *</label><input id="n" name="name" autocomplete="name" required>
+<label for="e">Email *</label><input id="e" name="email" type="email" autocomplete="email" required>
+<label for="p">Phone</label><input id="p" name="phone" type="tel" autocomplete="tel">
+<label for="c">Country *</label><select id="c" name="country" required><option value="">Choose a country…</option><option>Norway</option><option>Canada</option></select>
+<label><input type="checkbox" name="news"> Send me the newsletter</label>
+<label><input type="checkbox" name="terms" required> I accept the terms *</label>
+<button type="submit">Create account</button>
+</form></main>
+<script>
+document.getElementById('signup').addEventListener('submit', e => {
+  e.preventDefault(); document.querySelector('main').innerHTML = '<h1>Thank you</h1><p>Your account has been created.</p>';
+});
+</script>
+</body></html>

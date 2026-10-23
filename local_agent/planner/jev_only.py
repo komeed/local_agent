@@ -1,0 +1,219 @@
+"""No planner model: code lists the candidate next actions, JevK5 picks one (planner_mode="jev").
+
+Every step the options are built from the checklist (`progress`), the screen and the goal:
+
+- `done`, when the checklist has nothing left (or there is no checklist and a step already worked);
+- the checklist's next line turned into actions (type "X" into "Field", press return, cmd+n / cmd+s for new / save);
+- `click "<name>"` for the enabled controls that best match the next item and the goal (prefilter.rank);
+- `type "<q>" into "<field>"` for each of the goal's quoted strings and the text fields;
+- press return / escape / tab, scroll when the view says there is more, menu commands when menu actions are on;
+- "none of these": the goal needs something the options don't offer (a shell command); the step then fails.
+
+There is no free-form terminal and no model fallback: with a backend that can't judge (cosine) or on a Jev error the
+step fails with a note.
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass, field
+
+from local_agent.goal_facts import quoted_strings
+from local_agent.history import StepRecord
+from local_agent.observe.models import SINGLE_LINE_ROLES, Snapshot, UIElement
+from local_agent.planner.kind import DONE_MIN_P, kind_state
+from local_agent.planner.qwen import PlannerError
+from local_agent.planner.schema import PlannerOutput
+from local_agent.ranking import date_fragment
+from local_agent.selector.prefilter import rank
+
+MAX_CLICKS = 12
+MAX_TYPE_FIELDS = 4
+MAX_TYPE_STRINGS = 3
+MAX_MENU = 8
+STATE_CHARS = 1500
+HISTORY_LINES = 3
+NONE_KEY = "none"
+NO_SHELL = "this goal needs a shell command; not available in jev mode"
+QUESTION = ("Which action is the best next step toward the user's goal? Work on the PROGRESS 'next' item when there is "
+            "one, deal with an open dialog or alert first, and never repeat a step that failed.")  # fmt: skip
+TEXT_FIELD_ROLES = SINGLE_LINE_ROLES | {"AXTextArea"}
+KEY_OPTIONS = ("return", "escape", "tab")
+
+
+@dataclass
+class Option:
+    key: str
+    label: str  # what Jev compares
+    plan: PlannerOutput | None  # None: "none of these" or done handled by the caller
+    kind: str = ""  # done | click | type | key | scroll | menu | none
+
+
+def _plan(**kw) -> PlannerOutput:
+    return PlannerOutput(done=False, reasoning="chosen from the listed actions", **kw)
+
+
+def _name(e: UIElement) -> str:
+    return (e.name() or "").strip()
+
+
+def _quote(text: str, n: int = 40) -> str:
+    text = text.replace('"', "'")
+    return text if len(text) <= n else text[: n - 1] + "…"
+
+
+def _plain(name: str) -> str:
+    return re.sub(r"[\s*:]+$", "", name.replace("*", " ")).strip().lower()
+
+
+def _named(snap: Snapshot, name: str, roles) -> UIElement | None:
+    return next((e for e in snap.elements if e.interactive and e.role in roles and _plain(_name(e)) == _plain(name)), None)
+
+
+def _target(e: UIElement | None, role: str, name: str) -> dict:
+    return {"id": e.id, "role": e.role, "description": name} if e else {"role": role, "description": name}
+
+
+def _labelled(e: UIElement, n: int = 40) -> str:
+    """The element's name for an option label: cut to n characters, but a date ("2 days ago") is never cut off."""
+    name = _name(e).replace('"', "'")
+    if len(name) <= n:
+        return name
+    frag = date_fragment(f"{name} {e.context}")
+    base = name[: n - 1].rstrip() + "…"
+    return f"{base} · {frag}" if frag and frag not in base else base
+
+
+def text_fields(snap: Snapshot) -> list[UIElement]:
+    fields = [e for e in snap.elements if e.interactive and e.enabled and e.role in TEXT_FIELD_ROLES]
+    fields.sort(key=lambda e: (not e.focused, e.frame.y if e.frame else 1e9))
+    return fields
+
+
+def checklist_actions(next_line: str, snap: Snapshot) -> list[tuple[str, PlannerOutput, str]]:
+    """(label, plan, kind) for what the checklist's next line says in words code understands."""
+    out: list[tuple[str, PlannerOutput, str]] = []
+    m = re.search(r'type "([^"]+)" into (?:the )?"([^"]+)"(?: field)?', next_line)
+    if m:
+        text, name = m.groups()
+        target = _target(_named(snap, name, TEXT_FIELD_ROLES), "any", name)
+        out.append((f'type "{_quote(text)}" into "{name}"', _plan(action="type", text=text, target=target), "type"))
+    if m := re.match(r'choose "([^"]+)" in "([^"]+)"', next_line):
+        value, name = m.groups()
+        target = _target(_named(snap, name, ("AXPopUpButton", "AXComboBox")), "any", name)
+        out.append((f'choose "{_quote(value)}" in "{name}"', _plan(action="type", text=value, target=target), "type"))
+    if m := re.match(r'tick "([^"]+)"', next_line):
+        out.append((f'click "{m.group(1)}"', _plan(action="click", target=_target(
+            _named(snap, m.group(1), ("AXCheckBox",)), "AXCheckBox", m.group(1))), "click"))
+    if m := re.match(r'submit the form: click "([^"]+)"', next_line):
+        out.append((f'click "{m.group(1)}"', _plan(action="click", target=_target(
+            _named(snap, m.group(1), ("AXButton",)), "AXButton", m.group(1))), "click"))
+    if "press return" in next_line or "then press return" in next_line:
+        out.append(("press return", _plan(action="shortcut", keys="return"), "key"))
+    if re.match(r"make a new", next_line):
+        out.append(("press cmd+n (new)", _plan(action="shortcut", keys="cmd+n"), "key"))
+    if next_line.startswith("save the document as"):
+        out.append(("press cmd+s (save)", _plan(action="shortcut", keys="cmd+s"), "key"))
+    return out
+
+
+def build_options(goal: str, scope: dict, history: list[StepRecord], snap: Snapshot | None, screen: str | None,
+                  menus: bool = False, hint_p: float = 0.5) -> list[Option]:
+    """The candidate next actions, in a stable order, each with a unique key."""
+    options: list[tuple[str, PlannerOutput | None, str]] = []
+    progress = scope.get("progress")
+    next_line = (progress or {}).get("next") or ""
+    hinted = bool(history) and (history[-1].goal_probability or 0) >= hint_p  # Jev's goal check says it may be done
+    if (progress and not next_line) or (not progress and any(h.succeeded for h in history)) or hinted:
+        options.append(("done: the goal is already accomplished", PlannerOutput(done=True, reasoning="chosen from the listed actions"), "done"))
+    if next_line:
+        options += checklist_actions(next_line, snap) if snap is not None else []
+    if snap is not None:
+        target = f"{next_line} {goal}".strip()
+        pool = [e for e in snap.elements if e.interactive and e.enabled and _name(e)]
+        top = rank(target, pool, MAX_CLICKS, MAX_CLICKS * 3).kept  # ties with the last kept are kept too
+        seen: set[str] = set()
+        counts: dict[str, int] = {}
+        for e in top:
+            counts[_name(e).lower()] = counts.get(_name(e).lower(), 0) + 1
+        for e in top:
+            label = f'click "{_labelled(e)}"'
+            if counts[_name(e).lower()] > 1:  # two controls share a name: say where each is
+                where = e.surroundings().strip() or e.role.removeprefix("AX")
+                label += f" ({_quote(where, 40)})"
+            if label in seen:
+                continue
+            seen.add(label)
+            options.append((label, _plan(action="click", target={"id": e.id, "role": e.role, "description": _name(e)}), "click"))
+        quotes = quoted_strings(goal)[:MAX_TYPE_STRINGS]
+        for q in quotes:
+            for f in text_fields(snap)[:MAX_TYPE_FIELDS]:
+                fname = _name(f) or f.role.removeprefix("AX").lower()
+                options.append((f'type "{_quote(q)}" into "{_quote(fname)}"' + (" (focused)" if f.focused else ""),
+                                _plan(action="type", text=q, target={"id": f.id, "role": f.role, "description": fname}), "type"))
+    for k in KEY_OPTIONS:
+        options.append((f"press {k}", _plan(action="shortcut", keys=k), "key"))
+    more = screen and re.search(r"\d+ more (?:not shown|controls below)", screen)
+    if more:
+        options.append(("scroll down", _plan(action="scroll", direction="down"), "scroll"))
+        options.append(("scroll up", _plan(action="scroll", direction="up"), "scroll"))
+    if menus and scope.get("menu_commands"):
+        for c in scope["menu_commands"][:MAX_MENU]:
+            path = c if isinstance(c, str) else c.get("path", "")
+            if path:
+                options.append((f'menu "{path}"', _plan(action="menu", command=path), "menu"))
+    options.append(("none of these: the goal needs something else, such as a shell command", None, "none"))
+    deduped, labels = [], set()
+    for label, plan, kind in options:
+        if label in labels:
+            continue
+        labels.add(label)
+        deduped.append(Option(f"o{len(deduped)}", label, plan, kind))
+    return deduped
+
+
+def pick(probabilities: dict[str, float], options: list[Option]) -> tuple[Option, float]:
+    """Jev's top option; a low-probability `done` gives way to the runner-up, because a wrong done ends the run."""
+    by_key = {o.key: o for o in options}
+    ranked = sorted(((k, float(p)) for k, p in probabilities.items() if k in by_key), key=lambda kv: -kv[1])
+    key, p = ranked[0]
+    if by_key[key].kind == "done" and p < DONE_MIN_P and len(ranked) > 1:
+        key, p = ranked[1]
+    return by_key[key], p
+
+
+@dataclass
+class JevPlanner:
+    settings: object
+    selector: object
+    needs_snapshot: bool = True  # Agent and the eval pass `snap=` (the options come from the elements)
+    last_messages: list = field(default_factory=list)
+    last_prompt_tokens: int | None = None
+    last_kind: tuple[str, float] | None = None
+    last_options: list = field(default_factory=list)
+
+    def next_step(self, goal: str, scope: dict, history: list[StepRecord], screen: str | None = None,
+                  snap: Snapshot | None = None) -> PlannerOutput:
+        from local_agent.selector.jev import JevError
+
+        menus = bool(getattr(self.settings, "menus_on", lambda: False)())
+        options = self.last_options = build_options(goal, scope, history, snap, screen, menus,
+                                                    getattr(self.settings, "goal_hint_threshold", 0.5))
+        state = kind_state(goal, scope, history[-HISTORY_LINES:], screen)
+        listing = "\n".join(f"{o.key}: {o.label}" for o in options)
+        self.last_messages = [{"role": "user", "content": f"{state}\n\nOptions:\n{listing}"}]
+        self.last_prompt_tokens = (len(state) + len(listing)) // 3
+        pick_option = getattr(self.selector, "pick_option", None)
+        try:
+            answer = pick_option(state, QUESTION, {o.key: o.label for o in options}) if pick_option else None
+        except JevError as e:
+            raise PlannerError(f"jev mode: Jev failed ({e})") from e
+        if answer is None:
+            raise PlannerError("jev mode: this Jev backend can't choose the next action (needs JevK5 or OpenJev); "
+                               "there is no planner model to fall back on")  # fmt: skip
+        option, p = pick(answer.probabilities or {answer.choice: answer.probability}, options)
+        self.last_kind = (option.label, p)
+        if option.kind == "none" or option.plan is None:
+            raise PlannerError(NO_SHELL)
+        out = option.plan.model_copy(update={"reasoning": f"Jev chose: {option.label} (p={p:.2f})"})
+        return out

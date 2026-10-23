@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Billing console</title><style>body{font:15px system-ui;margin:0}header,main,section,nav{padding:10px 16px}button,input,select,textarea{font:inherit;margin:2px}fieldset{margin:8px 16px}</style></head>
+<body>
+<main><h1>Console</h1>
+<div role="tablist" aria-label="Sections"><button role="tab" aria-selected="true" id="t1">Overview</button>
+<button role="tab" aria-selected="false" id="t2">Billing</button><button role="tab" aria-selected="false" id="t3">Team</button></div>
+<div role="tabpanel" id="panel"><h2>Overview</h2><p>Nothing to see here.</p></div></main>
+<script>
+const text={t1:["Overview","Nothing to see here."],t2:["Billing","Your plan renews on the 1st."],t3:["Team","Three members."]};
+document.querySelectorAll('[role=tab]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('[role=tab]').forEach(x=>x.setAttribute('aria-selected',String(x===b)));
+  setTimeout(()=>{document.getElementById('panel').innerHTML='<h2>'+text[b.id][0]+'</h2><p>'+text[b.id][1]+'</p>';},120);
+}));
+</script>
+</body></html>

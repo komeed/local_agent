@@ -1,0 +1,132 @@
+{
+ "url": "file:///evals/fixtures/web/web_spa_tabs.html",
+ "title": "Billing console",
+ "inner_width": 2560,
+ "inner_height": 1440,
+ "candidates": 8,
+ "listed": 6,
+ "interactive_in_view": 3,
+ "more": 0,
+ "elements": [
+  {
+   "web_id": "la1",
+   "role": "tab",
+   "name": "Overview",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    18,
+    87.7,
+    79.9,
+    23.5
+   ],
+   "path": "AXGroup:Sections",
+   "context": "section \"Console\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la2",
+   "role": "tab",
+   "name": "Billing",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    105.9,
+    87.7,
+    57.1,
+    23.5
+   ],
+   "path": "AXGroup:Sections",
+   "context": "section \"Console\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la3",
+   "role": "tab",
+   "name": "Team",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    167,
+    87.7,
+    53,
+    23.5
+   ],
+   "path": "AXGroup:Sections",
+   "context": "section \"Console\"",
+   "interactive": true
+  },
+  {
+   "web_id": "",
+   "role": "heading",
+   "name": "",
+   "value": "Console",
+   "placeholder": "",
+   "tag": "h1",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    16,
+    30.1,
+    2528,
+    35.5
+   ],
+   "path": "",
+   "context": "",
+   "interactive": false
+  },
+  {
+   "web_id": "",
+   "role": "heading",
+   "name": "",
+   "value": "Overview",
+   "placeholder": "",
+   "tag": "h2",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    16,
+    131.9,
+    2528,
+    26.5
+   ],
+   "path": "",
+   "context": "",
+   "interactive": false
+  },
+  {
+   "web_id": "",
+   "role": "text",
+   "name": "",
+   "value": "Nothing to see here.",
+   "placeholder": "",
+   "tag": "p",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    16,
+    177,
+    2528,
+    17.5
+   ],
+   "path": "",
+   "context": "",
+   "interactive": false
+  }
+ ]
+}

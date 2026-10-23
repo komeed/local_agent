@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Docs search</title><style>body{font:15px system-ui;margin:0}header,main,section,nav{padding:10px 16px}button,input,select,textarea{font:inherit;margin:2px}fieldset{margin:8px 16px}</style></head>
+<body>
+<header><h1>Acme Docs</h1>
+<form onsubmit="return false"><input type="search" placeholder="Search the docs" style="width:260px"><button type="submit">Search</button></form>
+<nav aria-label="Main"><a href="#guide">Guide</a> <a href="#api">API</a> <a href="#faq">FAQ</a></nav></header>
+<main id="out"><h2>Welcome</h2><p>Browse the guides or search for a topic.</p></main>
+<script>
+const f=document.querySelector('form'),q=document.querySelector('input');
+f.addEventListener('submit',e=>{e.preventDefault();document.getElementById('out').innerHTML='<h2>Results</h2><p>Results for '+q.value+'</p>';});
+</script>
+</body></html>

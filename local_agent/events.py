@@ -1,8 +1,4 @@
-"""JSON Lines event stream for `local-agent run --events`, the interface the macOS app reads.
-
-One JSON object per line on stdout, flushed as it happens. See docs/APP_INTEGRATION.md for the schema; bump
-EVENTS_VERSION when an existing field changes meaning or is removed (adding fields is fine).
-"""
+"""JSON Lines events for `local-agent run --events` and `doctor --json`. The contract is docs/APP_INTEGRATION.md."""
 
 from __future__ import annotations
 
@@ -10,111 +6,110 @@ import json
 import sys
 import time
 from dataclasses import asdict
-from typing import Callable, TextIO
+from typing import IO, Callable
 
-from local_agent.config import Settings
 from local_agent.history import StepRecord
-from local_agent.observe.models import Snapshot, UIElement
+from local_agent.observe.models import UIElement
 from local_agent.planner.schema import PlannerOutput
 from local_agent.selector.jev import Selection
 
 EVENTS_VERSION = 1
 
 
-def step_status(rec: StepRecord) -> str:
-    """"ok", "failed" or "dry-run" — the same word the CLI prints."""
-    if rec.note.startswith("dry-run"):
-        return "dry-run"
-    return "ok" if rec.succeeded else "failed"
+class EventWriter:
+    """Writes one JSON object per line and flushes, so a reader sees each event as it happens."""
 
-
-def element_info(e: UIElement) -> dict:
-    return {"id": e.id, "role": e.role, "name": e.name(), "description": e.describe(), "path": e.path,
-            "frame": asdict(e.frame) if e.frame else None}  # fmt: skip
-
-
-class TimedPlanner:
-    """Wraps a planner to time each call; the inner planner's last prompt/reply are read from it."""
-
-    def __init__(self, inner):
-        self.inner = inner
-        self.seconds: float | None = None
-        self.screen: str | None = None  # the screen view the planner was given
-
-    def next_step(self, goal, scope, history, screen=None) -> PlannerOutput:
-        self.screen = screen
-        t = time.monotonic()
-        try:
-            return self.inner.next_step(goal, scope, history, screen)
-        finally:
-            self.seconds = time.monotonic() - t
-
-
-class TimedSelector:
-    def __init__(self, inner):
-        self.inner = inner
-        self.select_seconds: float | None = None
-        self.verify_seconds: float | None = None
-
-    def select(self, goal, snap, step) -> Selection:
-        t = time.monotonic()
-        try:
-            return self.inner.select(goal, snap, step)
-        finally:
-            self.select_seconds = time.monotonic() - t
-
-    def verify(self, goal, step, element, before, after) -> float:
-        t = time.monotonic()
-        try:
-            return self.inner.verify(goal, step, element, before, after)
-        finally:
-            self.verify_seconds = time.monotonic() - t
-
-
-class EventStream:
-    def __init__(self, out: TextIO | None = None, clock: Callable[[], float] = time.monotonic):
-        self.out = out or sys.stdout
+    def __init__(self, stream: IO[str] | None = None, clock: Callable[[], float] = time.monotonic):
+        self.stream = stream or sys.stdout
         self.clock = clock
         self.t0 = clock()
 
+    def elapsed(self) -> float:
+        return round(self.clock() - self.t0, 3)
+
     def emit(self, type_: str, **fields) -> None:
-        event = {"type": type_, "t": round(self.clock() - self.t0, 3), **fields}
-        self.out.write(json.dumps(event, ensure_ascii=False, default=str) + "\n")
-        self.out.flush()
-
-    def start(self, goal: str, s: Settings, dry_run: bool, target_app: str | None) -> None:
-        self.emit("start", version=EVENTS_VERSION, goal=goal, dry_run=dry_run, target_app=target_app,
-                  settings={k: getattr(s, k) for k in ("planner_model", "planner_mode", "planner_view",
-                            "planner_num_ctx", "jev_backend", "threshold", "verify_threshold", "max_steps",
-                            "max_consecutive_failures")})  # fmt: skip
-
-    def plan(self, n: int, snap: Snapshot, plan: PlannerOutput, planner: TimedPlanner) -> None:
-        inner = planner.inner
-        self.emit("plan", step=n, app=snap.app, window=snap.window_title, elements=len(snap.elements),
-                  plan=plan.model_dump(), summary=plan.summary(), planner_s=_round(planner.seconds),
-                  prompt_tokens=getattr(inner, "last_prompt_tokens", None), screen=planner.screen,
-                  messages=getattr(inner, "last_messages", None))  # fmt: skip
-
-    def select(self, n: int, sel: Selection, selector: TimedSelector) -> None:
-        self.emit("select", step=n, source=sel.source, element=element_info(sel.element),
-                  probability=round(sel.probability, 4), confidence=round(sel.confidence, 4),
-                  candidates=sel.candidates, rounds=sel.rounds,
-                  select_s=None if sel.source == "planner" else _round(selector.select_seconds))  # fmt: skip
-
-    def confirm(self, n: int, command: str) -> None:
-        self.emit("confirm_terminal", step=n, command=command)
-
-    def record(self, rec: StepRecord, selector: TimedSelector) -> None:
-        verify_s = _round(selector.verify_seconds) if rec.verify_probability is not None else None
-        self.emit("record", **asdict(rec), status=step_status(rec), verify_s=verify_s)
-
-    def result(self, success: bool, reason: str, history: list[StepRecord]) -> None:
-        self.emit("result", success=success, reason=reason, steps=len(history),
-                  history=[{**asdict(r), "status": step_status(r)} for r in history])  # fmt: skip
-
-    def error(self, message: str) -> None:
-        self.emit("error", message=message)
+        line = json.dumps({"type": type_, "t": self.elapsed(), **fields}, ensure_ascii=False)
+        self.stream.write(line + "\n")
+        self.stream.flush()
 
 
-def _round(x: float | None) -> float | None:
-    return None if x is None else round(x, 3)
+def _secs(v: float | None) -> float | None:
+    return None if v is None else round(v, 3)
+
+
+def plan_payload(plan: PlannerOutput) -> dict:
+    d = plan.model_dump(mode="json")
+    d["summary"] = plan.summary()
+    return d
+
+
+def element_info(el: UIElement) -> dict:
+    return {
+        "id": el.id,
+        "role": el.role,
+        "name": el.name(),
+        "description": el.describe(),
+        "frame": asdict(el.frame) if el.frame else None,
+    }
+
+
+def record_payload(rec: StepRecord) -> dict:
+    return asdict(rec)
+
+
+def plan_event(step: int, plan: PlannerOutput, screen: str | None, messages: list[dict] | None,
+               prompt_tokens: int | None, planner_s: float | None, web: dict | None = None) -> dict:
+    return {
+        "step": step,
+        "plan": plan_payload(plan),
+        "screen": screen,
+        "messages": messages or None,
+        "prompt_tokens": prompt_tokens or None,
+        "planner_s": _secs(planner_s),
+        "web": web or None,
+    }
+
+
+def stage_event(step: int, stage: str, previous_elapsed_s: float | None) -> dict:
+    """The start of a phase of step `step`; `elapsed_s` is how long the previous phase took (null for the first)."""
+    return {"step": step, "stage": stage, "elapsed_s": _secs(previous_elapsed_s)}
+
+
+def outline_event(items: list[str], seconds: float, load_s: float, rejected: str = "") -> dict:
+    """The numbered steps the planner model proposed at the start (`items` is empty and `rejected` says why when the outline
+    was thrown away); `load_s` is its model load time."""
+    return {"items": items, "seconds": _secs(seconds), "load_s": _secs(load_s), "rejected": rejected or None}
+
+
+def replan_event(reason: str, items: list[str], rejected: str = "") -> dict:
+    """The steps still to do after the run got stuck (`reason`); `rejected` when the revision was discarded."""
+    return {"reason": reason, "items": items, "rejected": rejected or None}
+
+
+def select_event(step: int, sel: Selection, select_s: float | None) -> dict:
+    return {
+        "step": step,
+        "source": sel.source,
+        "element": element_info(sel.element),
+        "probability": sel.probability,
+        "confidence": sel.confidence,
+        "candidates": sel.candidates,
+        "rounds": sel.rounds,
+        "margin": sel.margin,
+        "overrode_id": sel.overrode_id,
+        "select_s": _secs(select_s),
+    }
+
+
+def record_event(rec: StepRecord, verify_s: float | None, goal_s: float | None = None) -> dict:
+    return {**record_payload(rec), "verify_s": _secs(verify_s), "goal_s": _secs(goal_s)}
+
+
+def result_event(success: bool, reason: str, history: list[StepRecord], elapsed_s: float) -> dict:
+    return {
+        "success": success,
+        "reason": reason,
+        "steps": len(history),
+        "elapsed_s": round(elapsed_s, 3),
+        "history": [record_payload(r) for r in history],
+    }

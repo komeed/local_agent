@@ -1,0 +1,1592 @@
+{
+ "url": "file:///evals/fixtures/web/web_link_list.html",
+ "title": "News front page",
+ "inner_width": 2560,
+ "inner_height": 1440,
+ "candidates": 601,
+ "listed": 79,
+ "interactive_in_view": 78,
+ "more": 222,
+ "elements": [
+  {
+   "web_id": "la1",
+   "role": "link",
+   "name": "About 1",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    85.7,
+    51.9,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"About 1\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la2",
+   "role": "link",
+   "name": "Careers 2",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    103.2,
+    66.2,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Careers 2\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la3",
+   "role": "link",
+   "name": "Blog 3",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    120.7,
+    43.9,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Blog 3\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la4",
+   "role": "link",
+   "name": "Docs 4",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    138.2,
+    48.5,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Docs 4\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la5",
+   "role": "link",
+   "name": "Pricing",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    155.7,
+    47.3,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Pricing\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la6",
+   "role": "link",
+   "name": "Support 6",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    173.2,
+    68.5,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Support 6\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la7",
+   "role": "link",
+   "name": "Status 7",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    190.7,
+    56.2,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Status 7\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la8",
+   "role": "link",
+   "name": "Security 8",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    208.2,
+    69.7,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Security 8\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la9",
+   "role": "link",
+   "name": "Press 9",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    225.7,
+    51.3,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Press 9\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la10",
+   "role": "link",
+   "name": "Plans 10",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    243.2,
+    57,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Plans 10\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la11",
+   "role": "link",
+   "name": "About 11",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    260.7,
+    58.6,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"About 11\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la12",
+   "role": "link",
+   "name": "Careers 12",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    278.2,
+    73,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Careers 12\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la13",
+   "role": "link",
+   "name": "Blog 13",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    295.7,
+    50.6,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Blog 13\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la14",
+   "role": "link",
+   "name": "Docs 14",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    313.2,
+    55.2,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Docs 14\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la15",
+   "role": "link",
+   "name": "Contact 15",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    330.7,
+    74.2,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Contact 15\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la16",
+   "role": "link",
+   "name": "Support 16",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    348.2,
+    75.2,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Support 16\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la17",
+   "role": "link",
+   "name": "Status 17",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    365.7,
+    62.9,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Status 17\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la18",
+   "role": "link",
+   "name": "Security 18",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    383.2,
+    76.5,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Security 18\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la19",
+   "role": "link",
+   "name": "Press 19",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    400.7,
+    58,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Press 19\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la20",
+   "role": "link",
+   "name": "Plans 20",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    418.2,
+    59.1,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Plans 20\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la21",
+   "role": "link",
+   "name": "About 21",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    435.7,
+    60.7,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"About 21\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la22",
+   "role": "link",
+   "name": "Careers 22",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    453.2,
+    75,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Careers 22\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la23",
+   "role": "link",
+   "name": "Blog 23",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    470.7,
+    52.7,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Blog 23\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la24",
+   "role": "link",
+   "name": "Docs 24",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    488.2,
+    57.1,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Docs 24\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la25",
+   "role": "link",
+   "name": "Contact 25",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    505.7,
+    76.3,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Contact 25\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la26",
+   "role": "link",
+   "name": "Support 26",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    523.2,
+    77.3,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Support 26\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la27",
+   "role": "link",
+   "name": "Status 27",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    540.7,
+    65,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Status 27\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la28",
+   "role": "link",
+   "name": "Security 28",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    558.2,
+    78.6,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Security 28\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la29",
+   "role": "link",
+   "name": "Press 29",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    575.7,
+    60.1,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Press 29\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la30",
+   "role": "link",
+   "name": "Plans 30",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    593.2,
+    59.4,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Plans 30\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la31",
+   "role": "link",
+   "name": "About 31",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    610.7,
+    61.1,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"About 31\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la32",
+   "role": "link",
+   "name": "Careers 32",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    628.2,
+    75.4,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Careers 32\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la33",
+   "role": "link",
+   "name": "Blog 33",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    645.7,
+    53,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Blog 33\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la34",
+   "role": "link",
+   "name": "Docs 34",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    663.2,
+    57.6,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Docs 34\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la35",
+   "role": "link",
+   "name": "Contact 35",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    680.7,
+    76.6,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Contact 35\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la36",
+   "role": "link",
+   "name": "Support 36",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    698.2,
+    77.6,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Support 36\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la37",
+   "role": "link",
+   "name": "Status 37",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    715.7,
+    65.4,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Status 37\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la38",
+   "role": "link",
+   "name": "Security 38",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    733.2,
+    78.9,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Security 38\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la39",
+   "role": "link",
+   "name": "Press 39",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    750.7,
+    60.5,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Press 39\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la40",
+   "role": "link",
+   "name": "Plans 40",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    768.2,
+    59.6,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Plans 40\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la41",
+   "role": "link",
+   "name": "About 41",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    785.7,
+    61.2,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"About 41\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la42",
+   "role": "link",
+   "name": "Careers 42",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    803.2,
+    75.6,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Careers 42\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la43",
+   "role": "link",
+   "name": "Blog 43",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    820.7,
+    53.3,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Blog 43\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la44",
+   "role": "link",
+   "name": "Docs 44",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    838.2,
+    57.9,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Docs 44\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la45",
+   "role": "link",
+   "name": "Contact 45",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    855.7,
+    76.9,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Contact 45\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la46",
+   "role": "link",
+   "name": "Support 46",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    873.2,
+    77.9,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Support 46\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la47",
+   "role": "link",
+   "name": "Status 47",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    890.7,
+    65.6,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Status 47\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la48",
+   "role": "link",
+   "name": "Security 48",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    908.2,
+    79.2,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Security 48\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la49",
+   "role": "link",
+   "name": "Press 49",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    925.7,
+    60.7,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Press 49\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la50",
+   "role": "link",
+   "name": "Plans 50",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    943.2,
+    59.3,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Plans 50\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la51",
+   "role": "link",
+   "name": "About 51",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    960.7,
+    61,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"About 51\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la52",
+   "role": "link",
+   "name": "Careers 52",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    978.2,
+    75.3,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Careers 52\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la53",
+   "role": "link",
+   "name": "Blog 53",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    995.7,
+    52.9,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Blog 53\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la54",
+   "role": "link",
+   "name": "Docs 54",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1013.2,
+    57.5,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Docs 54\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la55",
+   "role": "link",
+   "name": "Contact 55",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1030.7,
+    76.5,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Contact 55\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la56",
+   "role": "link",
+   "name": "Support 56",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1048.2,
+    77.5,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Support 56\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la57",
+   "role": "link",
+   "name": "Status 57",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1065.7,
+    65.3,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Status 57\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la58",
+   "role": "link",
+   "name": "Security 58",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1083.2,
+    78.8,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Security 58\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la59",
+   "role": "link",
+   "name": "Press 59",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1100.7,
+    60.3,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Press 59\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la60",
+   "role": "link",
+   "name": "Plans 60",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1118.2,
+    59.5,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Plans 60\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la61",
+   "role": "link",
+   "name": "About 61",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1135.7,
+    61.2,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"About 61\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la62",
+   "role": "link",
+   "name": "Careers 62",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1153.2,
+    75.5,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Careers 62\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la63",
+   "role": "link",
+   "name": "Blog 63",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1170.7,
+    53.2,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Blog 63\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la64",
+   "role": "link",
+   "name": "Docs 64",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1188.2,
+    57.8,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Docs 64\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la65",
+   "role": "link",
+   "name": "Contact 65",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1205.7,
+    76.8,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Contact 65\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la66",
+   "role": "link",
+   "name": "Support 66",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1223.2,
+    77.8,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Support 66\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la67",
+   "role": "link",
+   "name": "Status 67",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1240.7,
+    65.5,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Status 67\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la68",
+   "role": "link",
+   "name": "Security 68",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1258.2,
+    79.1,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Security 68\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la69",
+   "role": "link",
+   "name": "Press 69",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1275.7,
+    60.6,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Press 69\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la70",
+   "role": "link",
+   "name": "Plans 70",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1293.2,
+    58.3,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Plans 70\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la71",
+   "role": "link",
+   "name": "About 71",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1310.7,
+    60.2,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"About 71\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la72",
+   "role": "link",
+   "name": "Careers 72",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1328.2,
+    74.5,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Careers 72\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la73",
+   "role": "link",
+   "name": "Blog 73",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1345.7,
+    52,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Blog 73\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la74",
+   "role": "link",
+   "name": "Docs 74",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1363.2,
+    55.9,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Docs 74\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la75",
+   "role": "link",
+   "name": "Contact 75",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1380.7,
+    75.6,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Contact 75\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la76",
+   "role": "link",
+   "name": "Support 76",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1398.2,
+    76.5,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Support 76\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la77",
+   "role": "link",
+   "name": "Status 77",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1415.7,
+    64.8,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Status 77\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la78",
+   "role": "link",
+   "name": "Security 78",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    56,
+    1433.2,
+    77.8,
+    17.5
+   ],
+   "path": "",
+   "context": "row \"Security 78\"",
+   "interactive": true
+  },
+  {
+   "web_id": "",
+   "role": "heading",
+   "name": "",
+   "value": "Front page",
+   "placeholder": "",
+   "tag": "h1",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    16,
+    30.1,
+    2513,
+    35.5
+   ],
+   "path": "",
+   "context": "",
+   "interactive": false
+  }
+ ]
+}

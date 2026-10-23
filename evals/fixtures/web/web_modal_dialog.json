@@ -1,0 +1,92 @@
+{
+ "url": "file:///evals/fixtures/web/web_modal_dialog.html",
+ "title": "Account",
+ "inner_width": 2560,
+ "inner_height": 1440,
+ "candidates": 10,
+ "listed": 4,
+ "interactive_in_view": 2,
+ "more": 0,
+ "elements": [
+  {
+   "web_id": "la1",
+   "role": "button",
+   "name": "Confirm",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    659,
+    475.3,
+    70.8,
+    23.5
+   ],
+   "path": "AXDialog:Delete account",
+   "context": "section \"Delete account?\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la2",
+   "role": "button",
+   "name": "Cancel",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    737.7,
+    475.3,
+    63.1,
+    23.5
+   ],
+   "path": "AXDialog:Delete account",
+   "context": "section \"Delete account?\"",
+   "interactive": true
+  },
+  {
+   "web_id": "",
+   "role": "heading",
+   "name": "",
+   "value": "Delete account?",
+   "placeholder": "",
+   "tag": "h2",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    657,
+    395.7,
+    1280,
+    26.5
+   ],
+   "path": "AXDialog:Delete account",
+   "context": "",
+   "interactive": false
+  },
+  {
+   "web_id": "",
+   "role": "text",
+   "name": "",
+   "value": "This cannot be undone.",
+   "placeholder": "",
+   "tag": "p",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    657,
+    440.8,
+    1280,
+    17.5
+   ],
+   "path": "AXDialog:Delete account",
+   "context": "",
+   "interactive": false
+  }
+ ]
+}

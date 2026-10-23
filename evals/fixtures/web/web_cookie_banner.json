@@ -1,0 +1,212 @@
+{
+ "url": "file:///evals/fixtures/web/web_cookie_banner.html",
+ "title": "Shop",
+ "inner_width": 2560,
+ "inner_height": 1440,
+ "candidates": 11,
+ "listed": 10,
+ "interactive_in_view": 6,
+ "more": 0,
+ "elements": [
+  {
+   "web_id": "la1",
+   "role": "link",
+   "name": "Cart",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    16,
+    85.7,
+    29.4,
+    17.5
+   ],
+   "path": "",
+   "context": "section \"Shoe Shop\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la2",
+   "role": "link",
+   "name": "Sale",
+   "value": "",
+   "placeholder": "",
+   "tag": "a",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    49.4,
+    85.7,
+    29.3,
+    17.5
+   ],
+   "path": "",
+   "context": "section \"Shoe Shop\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la3",
+   "role": "button",
+   "name": "Shop now",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    18,
+    172.7,
+    83.7,
+    23.5
+   ],
+   "path": "",
+   "context": "section \"Shoe Shop\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la4",
+   "role": "button",
+   "name": "Accept all",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    14,
+    1402.5,
+    83.4,
+    23.5
+   ],
+   "path": "AXDialog:Cookie settings",
+   "context": "section \"We use cookies\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la5",
+   "role": "button",
+   "name": "Reject non-essential",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    105.4,
+    1402.5,
+    156.1,
+    23.5
+   ],
+   "path": "AXDialog:Cookie settings",
+   "context": "section \"We use cookies\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la6",
+   "role": "button",
+   "name": "Manage preferences",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    269.4,
+    1402.5,
+    156.6,
+    23.5
+   ],
+   "path": "AXDialog:Cookie settings",
+   "context": "section \"We use cookies\"",
+   "interactive": true
+  },
+  {
+   "web_id": "",
+   "role": "heading",
+   "name": "",
+   "value": "Shoe Shop",
+   "placeholder": "",
+   "tag": "h1",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    16,
+    30.1,
+    2528,
+    35.5
+   ],
+   "path": "",
+   "context": "",
+   "interactive": false
+  },
+  {
+   "web_id": "",
+   "role": "text",
+   "name": "",
+   "value": "Welcome to the shop.",
+   "placeholder": "",
+   "tag": "p",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    16,
+    138.2,
+    2528,
+    17.5
+   ],
+   "path": "",
+   "context": "",
+   "interactive": false
+  },
+  {
+   "web_id": "",
+   "role": "heading",
+   "name": "",
+   "value": "We use cookies",
+   "placeholder": "",
+   "tag": "h2",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    12,
+    1322.8,
+    2536,
+    26.5
+   ],
+   "path": "AXDialog:Cookie settings",
+   "context": "",
+   "interactive": false
+  },
+  {
+   "web_id": "",
+   "role": "text",
+   "name": "",
+   "value": "We use cookies to improve your experience.",
+   "placeholder": "",
+   "tag": "p",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    12,
+    1368,
+    2536,
+    17.5
+   ],
+   "path": "AXDialog:Cookie settings",
+   "context": "",
+   "interactive": false
+  }
+ ]
+}

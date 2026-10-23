@@ -1,0 +1,132 @@
+{
+ "url": "file:///evals/fixtures/web/web_icon_buttons.html",
+ "title": "Editor toolbar",
+ "inner_width": 2560,
+ "inner_height": 1440,
+ "candidates": 6,
+ "listed": 6,
+ "interactive_in_view": 4,
+ "more": 0,
+ "elements": [
+  {
+   "web_id": "la1",
+   "role": "button",
+   "name": "Close",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    18,
+    87.7,
+    32,
+    25
+   ],
+   "path": "AXGroup:Editor",
+   "context": "section \"Untitled design\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la2",
+   "role": "button",
+   "name": "Settings",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    54,
+    87.7,
+    32,
+    25
+   ],
+   "path": "AXGroup:Editor",
+   "context": "section \"Untitled design\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la3",
+   "role": "button",
+   "name": "Share",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    90,
+    87.7,
+    32,
+    25
+   ],
+   "path": "AXGroup:Editor",
+   "context": "section \"Untitled design\"",
+   "interactive": true
+  },
+  {
+   "web_id": "la4",
+   "role": "button",
+   "name": "Help",
+   "value": "",
+   "placeholder": "",
+   "tag": "button",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    130,
+    87.7,
+    32,
+    25
+   ],
+   "path": "AXGroup:Editor",
+   "context": "section \"Untitled design\"",
+   "interactive": true
+  },
+  {
+   "web_id": "",
+   "role": "heading",
+   "name": "",
+   "value": "Untitled design",
+   "placeholder": "",
+   "tag": "h1",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    16,
+    30.1,
+    2528,
+    35.5
+   ],
+   "path": "AXGroup:Editor",
+   "context": "",
+   "interactive": false
+  },
+  {
+   "web_id": "",
+   "role": "text",
+   "name": "",
+   "value": "Canvas",
+   "placeholder": "",
+   "tag": "p",
+   "enabled": true,
+   "focused": false,
+   "checked": null,
+   "rect": [
+    16,
+    149.7,
+    2528,
+    17.5
+   ],
+   "path": "",
+   "context": "",
+   "interactive": false
+  }
+ ]
+}

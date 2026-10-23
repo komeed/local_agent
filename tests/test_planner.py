@@ -82,3 +82,24 @@ def test_falls_back_when_structured_output_unavailable(textedit):
     assert planner.next_step("select all", textedit.scope(), []).keys == "cmd+a"
     assert [("format" in c) for c in calls] == [True, False, False]  # remembers after the first 501
     assert "JSON schema" in calls[1]["messages"][1]["content"]
+
+
+def test_loop_warning_for_repeated_successes():
+    import json as _json
+
+    from local_agent.history import StepRecord, loop_warning, repeated_cycle
+    from local_agent.planner.qwen import build_messages
+
+    def ok(n, plan):
+        return StepRecord(n, plan, executed=True, verified=True)
+
+    plans = ["shortcut keys=cmd+t", "type text='gmail.com'", "shortcut keys=enter"] * 2
+    history = [ok(i + 1, p) for i, p in enumerate(plans)]
+    assert repeated_cycle(history) == (plans[:3], 2)
+    assert "successfully 2 times in a row" in loop_warning(history)
+    payload = _json.loads(build_messages("g", {}, history)[1]["content"])
+    assert "answer done" in payload["warning"]
+    assert repeated_cycle(history[:4]) == ([], 0)
+    assert repeated_cycle([ok(1, "scroll down"), ok(2, "scroll down")]) == ([], 0)
+    failed = [StepRecord(i, "click [AXButton] x", executed=True, verified=False) for i in (1, 2)]
+    assert "all failed" in loop_warning(failed)

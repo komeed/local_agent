@@ -8,14 +8,16 @@ run as a tournament: chunks of <=255 (one question per chunk), then the chunk wi
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
+from typing import Callable
 
 import httpx
 
 from local_agent.config import JEV_MAX_CHOICES, Settings
 from local_agent.observe.models import Snapshot, UIElement
 from local_agent.planner.schema import PlannerOutput
-from local_agent.selector.prefilter import prefilter
+from local_agent.selector.prefilter import missing_name, prefilter, score
 
 # Roles treated as interchangeable when filtering by the planner's target role.
 ROLE_GROUPS = [
@@ -47,7 +49,10 @@ class Selection:
     confidence: float
     candidates: int
     rounds: int
-    source: str = "jev"  # "planner" when the planner named the element by its screen-view number
+    source: str = "jev"  # "planner": named by its screen-view number; "exact": its name equals the description
+    margin: float = 1.0  # final probability minus the runner-up's; small when Jev couldn't tell two options apart
+    # The planner's [number] that the ambiguity guard overruled (planner_pick), when Jev picked instead.
+    overrode_id: int | None = None
 
 
 def pick_by_id(snap: Snapshot, step: PlannerOutput) -> Selection | None:
@@ -59,6 +64,69 @@ def pick_by_id(snap: Snapshot, step: PlannerOutput) -> Selection | None:
     if el is None or (step.action == "type" and el.role not in TEXT_ROLES):
         return None
     return Selection(el, 1.0, 1.0, 1, 0, source="planner")
+
+
+def same_named(snap: Snapshot, el: UIElement) -> list[UIElement]:
+    """Other enabled controls of el's role group with exactly el's name: the rows' "Delete" buttons, or unnamed fields
+    told apart only by their labels. They read the same in the planner's screen view."""
+    name = el.name()
+    return [e for e in snap.elements
+            if e.id != el.id and e.interactive and e.enabled and e.name() == name and _role_matches(el.role, e.role)]  # fmt: skip
+
+
+@dataclass
+class PlannerPick:
+    selection: Selection | None  # the planner's element, or None: ask Jev
+    overruled: int | None = None  # the planner's id, when the guard sent the pick to Jev
+    note: str = ""
+
+
+def planner_pick(snap: Snapshot, step: PlannerOutput) -> PlannerPick:
+    """pick_by_id plus two guards. First, the number must match the description: an element sharing no word with it
+    (text, surroundings or role) is dropped and Jev picks from the description. Second, an ambiguity guard. A small planner reading many identical lines ("[57] Delete" once per row)
+    often gives the wrong number while its description names the right row. When a same-named control matches the
+    description better than the numbered one, the number is dropped and Jev picks from the description. If the
+    description doesn't tell them apart, the number is kept: Jev would have nothing better to go on."""
+    sel = pick_by_id(snap, step)
+    if sel is None:
+        return PlannerPick(None)
+    el, description = sel.element, step.target.description.strip()
+    if description and score(description, el)[1] == 0:
+        # Nothing in the element (text, surroundings, role) resembles the description: the number is a misread.
+        note = (f"[{el.id}] ({el.describe(60)}) does not match the description {description!r}; "
+                "Jev chose from the description instead. Use the number of the control you mean, or none")  # fmt: skip
+        exact = exact_match(description, filter_candidates(snap.elements, step))
+        if exact is not None:
+            note += f"; picked [{exact.id}] {exact.name()!r}, whose name matches exactly"
+            return PlannerPick(Selection(exact, 1.0, 1.0, 1, 0, source="exact"), overruled=el.id, note=note)
+        return PlannerPick(None, overruled=el.id, note=note)
+    twins = same_named(snap, el)
+    if not twins or not description:
+        return PlannerPick(sel)
+    mine = score(description, el)[1]
+    better = [t for t in twins if score(description, t)[1] > mine + 1e-6]
+    if not better:
+        return PlannerPick(sel)
+    note = (f"[{el.id}] is one of {len(twins) + 1} {el.name()!r} controls and the description matches "
+            f"{'another' if len(better) == 1 else f'{len(better)} others'} better; Jev chose instead")  # fmt: skip
+    return PlannerPick(None, overruled=el.id, note=note)
+
+
+ROLE_WORDS = {"the", "a", "an", "button", "menu", "item", "field", "icon", "tab", "checkbox", "link", "option"}
+
+
+def _norm(text: str) -> str:
+    return " ".join(w for w in re.findall(r"[a-z0-9]+", text.lower()) if w not in ROLE_WORDS)
+
+
+def exact_match(description: str, pool: list[UIElement]) -> UIElement | None:
+    """The one candidate whose own name (title, label or value; not surroundings) equals the description once
+    quotes, case and role words are dropped. Several equal names ("Delete" in every row) or none: None."""
+    want = _norm(description)
+    if not want:
+        return None
+    named = [e for e in pool if _norm(e.name()) == want]
+    return named[0] if len(named) == 1 else None
 
 
 def _role_matches(wanted: str, role: str) -> bool:
@@ -166,7 +234,9 @@ class JevClient:
 
     # --- element selection -------------------------------------------------------------------------------
 
-    def _choice_round(self, state: str, instructions: str, groups: list[list[UIElement]]) -> list[ChoiceAnswer]:
+    def _choice_round(
+        self, state: str, instructions: str, groups: list[list[UIElement]], describe: Callable[[UIElement], str]
+    ) -> list[ChoiceAnswer]:
         questions, names = {}, {}
         for i, group in enumerate(groups):
             qid = f"pick_{i}"
@@ -174,14 +244,31 @@ class JevClient:
             questions[qid] = {
                 "type": "choice",
                 "instructions": instructions,
-                "criteria": {_option_name(e): e.describe() for e in group},
+                "criteria": {_option_name(e): describe(e) for e in group},
             }
         answers = self.system_one(state, questions)
         return [_parse_choice(answers[qid], names[qid]) for qid in questions]
 
     def select(self, goal: str, snap: Snapshot, step: PlannerOutput) -> Selection:
         target = step.target.description if step.target else "the text field to type into"
-        candidates = prefilter(target, filter_candidates(snap.elements, step), self.settings.prefilter_top_k)
+        pool = filter_candidates(snap.elements, step)
+        if step.target and (name := missing_name(target, pool)):
+            raise JevError(f'no element named "{name}" on screen')
+        if step.target and step.action != "type" and (exact := exact_match(target, pool)) is not None:
+            return Selection(exact, 1.0, 1.0, len(pool), 0, source="exact")  # no model call
+        candidates = prefilter(target, pool, self.settings.prefilter_top_k, self.settings.prefilter_max_k)
+        return self.choose(goal, snap, step, candidates)
+
+    def choose(
+        self,
+        goal: str,
+        snap: Snapshot,
+        step: PlannerOutput,
+        candidates: list[UIElement],
+        describe: Callable[[UIElement], str] = UIElement.describe,
+    ) -> Selection:
+        """Ask Jev which of `candidates` the step targets (a tournament when there are more than chunk_size)."""
+        target = step.target.description if step.target else "the text field to type into"
         if not candidates:
             raise JevError("No candidate elements in the current window")
         state = (
@@ -194,7 +281,7 @@ class JevClient:
             # A one-option choice is meaningless; ask whether the lone candidate is the target instead.
             only = candidates[0]
             answers = self.system_one(
-                state, {"is_target": {"type": "noul", "instructions": f"Is this element {target}? {only.describe()}"}}
+                state, {"is_target": {"type": "noul", "instructions": f"Is this element {target}? {describe(only)}"}}
             )
             p = _parse_noul(answers["is_target"])
             return Selection(only, p, p, 1, 1)
@@ -204,12 +291,64 @@ class JevClient:
         pool, rounds = candidates, 0
         while True:
             rounds += 1
-            results = self._choice_round(state, instructions, chunk(pool, self.chunk_size))
+            results = self._choice_round(state, instructions, chunk(pool, self.chunk_size), describe)
             if len(results) == 1:
                 final = results[0]
                 break
             pool = [by_name[r.choice] for r in results]
-        return Selection(by_name[final.choice], final.probability, final.confidence, len(candidates), rounds)
+        others = [float(p) for name, p in final.probabilities.items() if name != final.choice]
+        margin = final.probability - max(others, default=0.0)
+        return Selection(by_name[final.choice], final.probability, final.confidence, len(candidates), rounds,
+                         margin=margin)  # fmt: skip
+
+    def checks(self) -> dict:
+        """Which judgments this selector makes (the `start` event's `checks`)."""
+        return {"goal": True, "safety": True, "verify": "jev"}
+
+    # --- goal completion -------------------------------------------------------------------------------------
+
+    def goal_done(self, goal: str, snap: Snapshot) -> float | None:
+        """Probability that the screen shows `goal` fully accomplished; None when the backend can't judge it.
+
+        Only the goal and the screen go in, not the steps taken: with "opened gmail.com" in the state, a yes/no model
+        tends to answer from the history instead of from what's on screen."""
+        answers = self.system_one(
+            goal_state(goal, snap, self.settings.goal_view_tokens),
+            {"goal_done": {"type": "noul", "instructions": GOAL_QUESTION,
+                           "criteria": {"true": "the screen shows the goal done", "false": "not done yet"}}},
+        )  # fmt: skip
+        return _parse_noul(answers["goal_done"])
+
+    # --- step kind ------------------------------------------------------------------------------------------
+
+    def step_kind(self, state: str) -> ChoiceAnswer | None:
+        """Which kind of step comes next (STEP_KINDS), for planner_mode="kind": the small planner then only fills
+        in the details. `state` is planner/kind.py::kind_state. None when the backend can't judge."""
+        kinds = step_kinds(self.settings)
+        answers = self.system_one(state, {"kind": {"type": "choice", "instructions": KIND_QUESTION, "criteria": kinds}})
+        return _parse_choice(answers["kind"], list(kinds))
+
+    def pick_option(self, state: str, instructions: str, options: dict[str, str]) -> ChoiceAnswer | None:
+        """A `choice` over `options` (key -> description) for planner_mode="jev". None when the backend can't judge."""
+        answers = self.system_one(state, {"pick": {"type": "choice", "instructions": instructions, "criteria": options}})
+        return _parse_choice(answers["pick"], list(options))
+
+    # --- terminal command safety ---------------------------------------------------------------------------
+
+    def command_safety(self, goal: str, step: PlannerOutput, snap: Snapshot, history: list) -> float | None:
+        """Probability that `step.command` is safe to run without asking the user (local_agent/safety.py); None
+        when the backend can't judge. Unlike goal_done, the steps so far are context here: they show what the
+        command is for."""
+        from local_agent.safety import SAFETY_QUESTION, safety_state
+
+        state = safety_state(goal, step.command or "", step.reasoning, snap.app, snap.window_title,
+                             [h.plan for h in history[-5:]])  # fmt: skip
+        answers = self.system_one(
+            state,
+            {"safe": {"type": "noul", "instructions": SAFETY_QUESTION,
+                      "criteria": {"true": "safe to run without asking", "false": "ask the user first"}}},
+        )  # fmt: skip
+        return _parse_noul(answers["safe"])
 
     # --- verification ------------------------------------------------------------------------------------
 
@@ -246,6 +385,56 @@ class JevClient:
         return _parse_noul(answers["changed"])
 
 
+GOAL_QUESTION = (
+    "Does the current screen show that the user's goal is fully accomplished? Answer true only if the screen shows "
+    "the result the goal asks for (for example the requested page or document is open, the setting is changed, the "
+    "text is entered). Answer false if only part of the goal is done, it is still loading or in progress, or "
+    "something else is shown."
+)
+
+
+KIND_QUESTION = "Which kind of step should the agent take next toward the user's goal?"
+# Option descriptions are what Jev compares; they name the typical tasks of each kind, since that's what the goal says.
+STEP_KINDS = {
+    "done": "Finish: the steps so far already did everything the goal asks, or their output or the screen already "
+    "answers the goal's question",
+    "terminal": "Run a shell command: open an app or website that is not on screen yet, or list, create, move or "
+    "read files and folders",
+    "menu": "Run a command from the app's menus: new document, save, save as, copy, paste, undo, find, bold, "
+    "close window",
+    "shortcut": "Press a plain key: close an open menu or dialog with escape, confirm with return, tab, arrows",
+    "click": "Click something on screen: a button, a checkbox, a pop-up, a field, or a file in a list; also a "
+    "dialog, sheet or error message that must be dealt with first",
+    "type": "Type text into a text field that is focused or on screen",
+    "scroll": "Scroll, because what the goal needs is further down or up and not visible on screen",
+}
+
+STEP_KINDS_OLD = {
+    "done": "Finish: the steps so far already did everything the goal asks, or their output or the screen already "
+    "answers the goal's question",
+    "terminal": "Run a shell command: open an app or website that is not on screen yet, or list, create, move or "
+    "read files and folders",
+    "shortcut": "Press a keyboard shortcut: select all, new document, save, find, copy, paste, undo, bold, close an "
+    "open menu with escape, confirm with return",
+    "click": "Click something on screen: a button, a menu or menu item, a checkbox, a pop-up, a field, or a file "
+    "in a list; also a dialog, sheet or error message that must be dealt with first",
+    "type": "Type text into a text field that is focused or on screen",
+    "scroll": "Scroll, because what the goal needs is further down or up and not visible on screen",
+}
+
+
+def step_kinds(settings: Settings) -> dict:
+    """The kinds Jev chooses among: with menu actions on, `menu` takes over the menu commands and shortcut list."""
+    return STEP_KINDS if settings.menus_on() else STEP_KINDS_OLD
+
+
+
+def goal_state(goal: str, snap: Snapshot, view_tokens: int) -> str:
+    from local_agent.observe.screen_view import render
+
+    return f"User goal: {goal}\nCurrent screen:\n{render(snap, view_tokens, numbered=False)}"
+
+
 class JevK5Client(JevClient):
     """JevK5 GGUF on a local llama-server, read with jevk5's own stdlib client (no torch).
 
@@ -279,8 +468,22 @@ class JevK5Client(JevClient):
 
 
 def make_selector(settings: Settings) -> JevClient:
+    from local_agent.selector import catalog
+
+    settings = catalog.resolve(settings)
     if settings.jev_backend == "jevk5":
         return JevK5Client(settings)
     if settings.jev_backend == "openjev":
         return JevClient(settings)
-    raise ValueError(f"unknown jev_backend {settings.jev_backend!r}; use 'jevk5' or 'openjev'")
+    if settings.jev_backend == "cosine":
+        from local_agent.selector.cosine import CosineClient
+
+        client = CosineClient(settings)
+        # Cosine only measures similarity: if llama-server is up, JevK5 judges goal / safety / verify.
+        try:
+            judge = JevK5Client(settings)
+            client.judge = judge if judge.health() else None
+        except ImportError:
+            pass
+        return client
+    raise ValueError(f"unknown jev_backend {settings.jev_backend!r}; use 'jevk5', 'openjev' or 'cosine'")

@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Chat</title><style>body{font:15px system-ui;margin:0}header,main,section,nav{padding:10px 16px}button,input,select,textarea{font:inherit;margin:2px}fieldset{margin:8px 16px}</style></head>
+<body>
+<main><h1>Assistant</h1><div id="log"><p>Hi! How can I help?</p></div>
+<div contenteditable="true" role="textbox" aria-label="Message" data-placeholder="Message the assistant" style="border:1px solid #888;min-height:48px;padding:8px;margin:8px 16px"></div>
+<button disabled>Send</button></main>
+<script>
+const box=document.querySelector('[role=textbox]'),send=document.querySelector('button'),log=document.getElementById('log');
+box.addEventListener('input',()=>{send.disabled=!box.innerText.trim();});
+send.addEventListener('click',()=>{const p=document.createElement('p');p.textContent='You: '+box.innerText.trim();log.appendChild(p);box.innerText='';send.disabled=true;});
+</script>
+</body></html>
