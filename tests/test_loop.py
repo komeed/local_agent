@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from local_agent.config import Settings
 from local_agent.loop import Agent, Hooks
@@ -47,11 +47,18 @@ def P(**kw):
 DONE = PlannerOutput(done=True, reasoning="finished")
 
 
-def make(textedit, steps, selector=None, confirm=True, asked=None, start_app=None, **settings):
+def make(textedit, steps, selector=None, confirm=True, asked=None, start_app=None, changing=False, **settings):
+    """`changing`: every observation differs (the window title counts up), as after steps that change the screen."""
     executed, ran = [], []
     asked = [] if asked is None else asked
+    seen = [0]
+
+    def observe():
+        seen[0] += 1
+        return replace(textedit, window_title=f"{textedit.window_title} {seen[0]}") if changing else textedit
+
     hooks = Hooks(
-        observe=lambda: textedit,
+        observe=observe,
         execute=lambda step, el: executed.append((step.action, el)) or Outcome(True, "did it"),
         run_terminal=lambda cmd: ran.append(cmd) or Outcome(True, "exit=0"),
         confirm_terminal=lambda cmd, why: asked.append((cmd, why)) or confirm,
@@ -238,7 +245,7 @@ class GoalSelector(FakeSelector):
 def test_goal_check_ends_run_at_high_probability(textedit):
     selector = GoalSelector([0.2, 0.95])
     steps = [P(action="shortcut", keys="cmd+t"), P(action="type", text="gmail.com"), P(action="shortcut", keys="cmd+w")]
-    agent, planner, executed, _ = make(textedit, steps, selector=selector)
+    agent, planner, executed, _ = make(textedit, steps, selector=selector, changing=True)
     result = agent.run("open gmail")
     assert result.success and result.reason.startswith("Jev: the screen shows the goal done (p=0.95)")
     assert len(executed) == 2 and result.history[-1].goal_probability == 0.95
@@ -247,7 +254,7 @@ def test_goal_check_ends_run_at_high_probability(textedit):
 def test_middling_goal_probability_hints_the_planner(textedit):
     selector = GoalSelector([0.7])
     steps = [P(action="shortcut", keys="cmd+t"), DONE]
-    agent, planner, _, _ = make(textedit, steps, selector=selector)
+    agent, planner, _, _ = make(textedit, steps, selector=selector, changing=True)
     assert agent.run("open gmail").success
     hinted = planner.seen[-1][0].for_planner()
     assert hinted["goal_probability"] == 0.7 and "may already show the goal done (p=0.70)" in hinted["note"]
@@ -284,7 +291,7 @@ def test_loop_guard_stops_a_repeated_sequence(textedit):
 
 def test_loop_guard_success_when_jev_rated_goal_likely(textedit):
     steps = [P(action="shortcut", keys="cmd+t")] * 5
-    agent, _, executed, _ = make(textedit, steps, selector=GoalSelector([0.6, 0.6, 0.6]))
+    agent, _, executed, _ = make(textedit, steps, selector=GoalSelector([0.6, 0.6, 0.6]), changing=True)
     result = agent.run("open a tab")
     assert result.success and "Jev rated the goal likely done" in result.reason and len(executed) == 3
 

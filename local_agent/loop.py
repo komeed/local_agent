@@ -50,6 +50,7 @@ from local_agent.goal_facts import (
     rest_of_goal,
     search_field,
     describe_facts,
+    empty_new_state,
     failing_facts,
     parse_facts,
     progress_scope,
@@ -93,6 +94,7 @@ class _Failed:
     ok: bool = False
 
 
+EDITABLE = {"AXTextArea", "AXTextField", "AXSearchField", "AXComboBox"}
 MAX_TAB_CHOICES = 16
 SECURE_NOTE = "typing into password fields is not allowed; the user must do this"
 
@@ -114,6 +116,9 @@ class Hooks:
     sleep: Callable[[float], None] = time.sleep
     # Web pages: wait for the page to settle (returns seconds waited), and click for real where a script click did nothing.
     settle_web: Callable[[], float] | None = None
+    # A cheap, comparable reading of the front window (focused element, title, child count); None when unreadable.
+    # With it, native actions settle as soon as it has been stable instead of sleeping the full settle_s.
+    fingerprint: Callable[[], object] | None = None
     trusted_click: Callable[[UIElement], ActOutcome] | None = None
     # Navigate the front browser window by tab (act/browser.py Bridge: bundle_for, find_tab, select_tab, open_tab).
     browser: object | None = None
@@ -122,6 +127,26 @@ class Hooks:
     # The outline made at the start (items, seconds, model load seconds) and a revision (reason, new items).
     on_outline: Callable[[list, float, float, str], None] = lambda items, seconds, load_s, rejected: None
     on_replan: Callable[[str, list, str], None] = lambda reason, items, rejected: None
+
+
+def wait_stable(fingerprint, sleep, cap_s: float, poll_s: float = 0.05, stable_s: float = 0.15,
+                clock: Callable[[], float] = time.monotonic) -> float:
+    """Wait until `fingerprint()` has stayed the same for `stable_s` (polling every `poll_s`), at most `cap_s`; returns
+    the seconds waited. An unreadable fingerprint (None) falls back to sleeping the whole cap."""
+    t0 = clock()
+    last = fingerprint()
+    if last is None:
+        sleep(cap_s)
+        return clock() - t0
+    changed_at = t0
+    while clock() - t0 < cap_s:
+        sleep(poll_s)
+        now = fingerprint()
+        if now != last:
+            last, changed_at = now, clock()
+        elif clock() - changed_at >= stable_s:
+            break
+    return clock() - t0
 
 
 @dataclass
@@ -172,6 +197,7 @@ class Agent:
         self.form_plan: FormPlan | None = None
         self._declined: str | None = None  # set when the user declines the submit: the run ends
         self._submitting = False
+        self._last_changed = True  # whether the last step changed the screen (the Jev goal check waits for a change)
         self._unsure = 0  # consecutive jev-mode steps that found no option Jev was sure of
         self.checklist: list = []  # every fact of the goal, in goal order, for the planner's progress
 
@@ -287,7 +313,7 @@ class Agent:
         rec.executed, rec.verified = out.ok, out.ok
         rec.note = (f"overwrite confirmed by user; {out.note}" if yes
                     else f'overwrite declined: "{fact.value}" already exists; {out.note}')  # fmt: skip
-        self.hooks.sleep(self.s.settle_s)
+        self._settle(False)
         history.append(rec)
         after = self.hooks.observe()
         stop = None
@@ -328,7 +354,7 @@ class Agent:
         out = self.hooks.execute(plan, button)
         rec.executed, rec.verified = out.ok, out.ok
         rec.note = ("leave confirmed by user; " if yes else "leave declined; stayed on the page; ") + out.note
-        self.hooks.sleep(self.s.settle_s)
+        self._settle(False)
         history.append(rec)
         after = self.hooks.observe()
         self.hooks.on_record(rec)
@@ -778,7 +804,9 @@ class Agent:
         if rec.succeeded and snap is not None and check_facts(self.facts, snap, self.started, self.known_facts):
             return AgentResult(True, f"goal facts hold: {describe_facts(self.facts)}", self.history)
         check = getattr(self.selector, "goal_done", None)
-        if not (self.s.goal_check and check and rec.succeeded and snap is not None):
+        if self.facts and self.s.facts_only_goal_check:
+            return None  # the facts cover the goal: they decide, no model call
+        if not (self.s.goal_check and check and rec.succeeded and snap is not None and self._last_changed):
             return None  # terminal steps re-observe next step; their goals usually end in an answer from the planner
         t0 = time.monotonic()
         try:
@@ -822,6 +850,7 @@ class Agent:
     ) -> tuple[StepRecord | None, Snapshot | None]:
         """Run one iteration. Returns (record, snapshot to reuse next time) or (None, _) when done."""
         self.timing = {}
+        self._last_changed = True
         self.web = snap.web  # {ms, candidates, listed, more} of the page read, {"error": …} or {}
         if snap.web.get("ms") is not None:
             self.timing["web_s"] = snap.web["ms"] / 1000
@@ -962,6 +991,14 @@ class Agent:
                 if f.kind == "new":
                     self.known_facts[f] = True
                     self.seen_facts.add(f)
+        elif (not changed and rec.executed and not self.dry_run
+              and self._is_new_thing_step(element, menu_cmd, self._keys(plan, menu_cmd))):
+            for f in self.checklist:  # New changed nothing because a new <noun> was already open and empty
+                if f.kind == "new" and empty_new_state(after, f.value):
+                    self.known_facts[f] = True
+                    self.seen_facts.add(f)
+                    rec.verified = True
+                    rec.note += f"; already on a new {f.value}; nothing changed"
         if changed and rec.executed and rec.verified and plan.action in ("click", "double_click") and element is not None:
             pending = pending_fact(self.checklist, snap, self.seen_facts, self.started, self.known_facts)
             if pending is not None and pending.kind == "click" and self._clicked_for(pending, plan, element):
@@ -975,13 +1012,17 @@ class Agent:
             for f in self.checklist:
                 if f.kind == "search" and self._submitted(plan, element, snap, f.value):
                     self.known_facts[f] = True  # pages that keep the query out of the URL
+        self._last_changed = changed
         self._note_repeat(rec, plan, history, changed)
         return rec, after
 
     def _settle(self, web: bool) -> None:
+        t0 = time.monotonic()
         if web:
-            t0 = time.monotonic()
             self.hooks.settle_web()
+            self.timing["settle_s"] = time.monotonic() - t0
+        elif self.s.event_settle and self.hooks.fingerprint is not None:
+            wait_stable(self.hooks.fingerprint, self.hooks.sleep, self.s.settle_s, self.s.settle_poll_s, self.s.settle_stable_s)
             self.timing["settle_s"] = time.monotonic() - t0
         else:
             self.hooks.sleep(self.s.settle_s)
@@ -1006,7 +1047,9 @@ class Agent:
             return
         items = items_from_steps(cleaned, self.apps)
         apps = [f for f in self.checklist if f.kind == "app" and f not in items]
-        self.checklist = apps + items
+        # Goal facts no line restates stay (their state is checked in code); a line that restates one is that fact.
+        kept = [f for f in self.checklist if f.kind in ("new", "site", "setting") and f not in items]
+        self.checklist = apps + [f for f in kept if f.kind != "setting"] + items + [f for f in kept if f.kind == "setting"]
         self.rest, self.outline_active = None, True
         self.hooks.on_outline(cleaned, self.outliner.last_seconds, self.outliner.last_load_s, "")
 
@@ -1110,13 +1153,42 @@ class Agent:
 
     def _verify(self, goal, plan, element, before, after, rec) -> None:
         t0 = time.monotonic()
+        if self.s.code_verify and (why := self._code_evidence(plan, element, before, after)):
+            rec.verified, rec.verify_source = True, "code"
+            rec.note += f"; verified in code: {why}"
+            self.timing["verify_s"] = time.monotonic() - t0
+            return
         try:
             p = self.selector.verify(goal, plan, element, before, after)
             rec.verify_probability, rec.verified = p, p >= self.s.verify_threshold
+            rec.verify_source = getattr(self.selector, "verify_source", "jev")
         except (JevError, httpx.HTTPError) as e:
             rec.note += f"; verify error: {e}"[:200]
         finally:
             self.timing["verify_s"] = time.monotonic() - t0
+
+    def _code_evidence(self, plan: PlannerOutput, element: UIElement | None, before: Snapshot, after: Snapshot) -> str:
+        """Why the step took effect, when the screen says so without asking a model ("" when it is empty or ambiguous):
+        the typed text is in a field, a checklist fact flipped to true, the app / window / address changed, a menu or
+        dialog opened, or the clicked control is gone."""
+        if plan.action == "type" and plan.text:
+            if any(e.role in EDITABLE and plan.text.lower() in e.value.lower() for e in after.elements):
+                return "the text is in a field"
+        flipped = [f for f in self.checklist if _holds(f, before) is not True and _holds(f, after) is True]
+        if flipped:
+            return f"{flipped[0].kind} fact holds now"
+        if (before.app, before.window_title) != (after.app, after.window_title):
+            return "the window changed"
+        if before.url != after.url and after.url:
+            return "the address changed"
+        old = {e.describe(80) for e in before.elements}
+        new = {e.describe(80) for e in after.elements}
+        if any(e.role in ("AXMenuItem", "AXSheet", "AXDialog") and e.describe(80) in new - old for e in after.elements) or (
+                dialog_elements(after) and not dialog_elements(before)):
+            return "a menu or dialog opened"
+        if element is not None and plan.action in ("click", "double_click") and element.describe(80) not in new:
+            return "the clicked control is gone"
+        return ""
 
     @staticmethod
     def _submitted(plan: PlannerOutput, element: UIElement | None, before: Snapshot, query: str) -> bool:
@@ -1197,6 +1269,10 @@ class Agent:
         opened = next((f for f in self.checklist if f.kind == "new" and f in self.seen_facts), None)
         if opened is not None and self._is_new_thing_step(element, menu_cmd, keys):
             todo = self._progress(snap)["next"]
+            while todo and re.search(r"\bnew\b", todo, re.I) and (item := pending_fact(
+                    self.checklist, snap, self.seen_facts, self.started, self.known_facts)) is not None and item.kind == "outline":
+                self.known_facts[item] = True  # a line about making the new thing, which is already open: done, not next
+                todo = self._progress(snap)["next"]
             return "block", f"a new {opened.value} is already open; " + (
                 f"work on: {todo}" if todo else "the goal looks complete; answer done")  # fmt: skip
         fact = self._saved_fact()

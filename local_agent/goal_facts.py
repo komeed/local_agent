@@ -49,6 +49,9 @@ NEW_DOC_RE = re.compile(r"\b(?:new|blank)\s+(?:document|file)\b", re.I)
 # "open/create/start/make (a) new <noun>", and "new <noun> in <App>".
 NEW_VERB_RE = re.compile(r"\b(?:open|create|start|make|begin)\s+(?:a\s+|an\s+|the\s+)?new\s+([a-z][\w-]*)", re.I)
 NEW_IN_RE = re.compile(r"\bnew\s+([a-z][\w-]*)\s+in\b", re.I)
+# An outline line that clicks a New control: 'Click the "New Chat" button' names the same state as "open a new chat".
+NEW_BUTTON_RE = re.compile(r"\b(?:click|press|tap|select|choose)\s+(?:on\s+)?(?:the\s+)?[\"“'‘]?new\s+([a-z][\w-]*)", re.I)
+NOT_NEW_NOUNS = {"button", "item", "icon", "menu", "link", "option", "command", "entry"}
 NOT_NOUNS = {"a", "an", "the", "and", "or", "in", "on", "of", "to", "for", "with", "at", "from", "by", "one"}
 DOC_NOUNS = {"document", "file"}  # their "new" shows on screen (an untitled / empty document); others are remembered
 
@@ -192,6 +195,113 @@ def tab_matches(words: str, title: str, url: str = "") -> bool:
     return True
 
 
+# "select model to be sonnet 5.5", "set font size to 14", "choose country Germany", "change theme to dark", "Model: Opus",
+# "use dark as the theme": a control named for the setting that must come to show the value.
+_SET_WORDS = r"[a-z][\w-]*(?:\s+[a-z][\w-]*){0,2}?"
+_VALUE = rf"(?:{QUOTE}|([^,;]+?))(?=\s+(?:and|then)\b|[,;]|\.(?:\s|$)|$)"
+SETTING_RES = (
+    re.compile(rf"\b(?:select|set|choose|change|switch)\s+(?:the\s+)?({_SET_WORDS})\s+(?:to\s+be|to|as)\s+{_VALUE}", re.I),
+    re.compile(rf"\b(?:select|set|choose|change|switch)\s+(?:the\s+)?([a-z][\w-]*(?:\s+[a-z][\w-]*)?)\s+{QUOTE}", re.I),
+    re.compile(rf"(?:^|[,;]\s*|\band\s+)({_SET_WORDS}):\s*{_VALUE}", re.I),
+    re.compile(rf"\buse\s+(?:{QUOTE}|([^,;]+?))\s+as\s+(?:the\s+)?([a-z][\w-]*(?:\s+[a-z][\w-]*)?)\b", re.I),
+    # "choose country Germany": a lowercase setting word, then a capitalised or numeric value
+    re.compile(r"\b(?:select|choose|set)\s+(?:the\s+)?((?-i:[a-z]\w*))\s+((?-i:[A-Z0-9][^,;]*?))(?=\s+(?:and|then)\b|[,;]|\.(?:\s|$)|$)", re.I),
+)
+NOT_SETTINGS = NOT_NOUNS | {"it", "this", "that", "up", "all", "tab", "window", "app", "application", "page", "back", "type",
+                            "write", "enter", "note", "goal", "task", "step", "url", "http", "https", "my", "your", "new",
+                            "focus", "view", "mode", "next", "previous", "off", "on"}  # fmt: skip
+
+
+def setting_matches(goal: str) -> list[tuple[str, str, int, int]]:
+    """(setting, value, start, end) for each "set <setting> to <value>" phrase; the setting is 1-3 plain words."""
+    text = re.sub(r"[“”]", '"', goal)
+    out = []
+    for i, rx in enumerate(SETTING_RES):
+        for m in rx.finditer(text):
+            g = [x for x in m.groups() if x is not None]
+            if i == 3:
+                value, setting = g[0], g[-1]
+            elif i in (1, 4):
+                setting, value = g[0], g[1]
+            else:
+                setting, value = g[0], g[-1]
+            words = setting.lower().split()
+            if not words or words[0] in NOT_SETTINGS or words[-1] in NOT_SETTINGS or resolve_app(setting, installed_apps()):
+                continue
+            value = value.strip(" \"'")
+            if value and not any(m.start() < e and s0 < m.end() for _, _, s0, e in out):
+                out.append((" ".join(words), value, m.start(), m.end()))
+    return out
+
+
+MENU_ITEM_ROLES = {"AXMenuItem", "AXOption", "AXRadioButton", "AXMenuItemRadio", "AXListBoxOption"}
+NOT_CONTROL_ROLES = {"AXMenuItem", "AXMenuBarItem", "AXMenuBar", "AXMenu"}
+
+
+def _norm(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
+
+
+def _has(hay: str, needle: str) -> bool:
+    """`needle` as whole words of `hay`, both normalised ("Sonnet 5.5" and "sonnet 5.5" agree; dots and runs of
+    spaces don't matter)."""
+    needle = _norm(needle)
+    return bool(needle) and f" {needle} " in f" {_norm(hay)} "
+
+
+def setting_controls(snap: Snapshot, fact: Fact) -> list:
+    """Controls named for the setting: every word of it is a word (or 3+ letter prefix) of their own title / label /
+    placeholder / help or of the label beside them."""
+    wanted = _norm(fact.value).split()
+    out = []
+    for e in snap.elements:
+        if not e.interactive or e.role in NOT_CONTROL_ROLES or e.role in MENU_ITEM_ROLES:
+            continue
+        have = _norm(f"{e.title} {e.label} {e.placeholder} {e.help} " + " ".join(re.findall(r'"([^"]*)"', e.context))).split()
+        if wanted and all(any(h == w or (len(w) >= 3 and h.startswith(w)) for h in have) for w in wanted):
+            out.append(e)
+    return out
+
+
+def shows_value(e, value: str) -> bool:
+    return _has(f"{e.title} {e.label} {e.value} {e.selected} {e.placeholder}", value)
+
+
+def setting_items(snap: Snapshot, value: str) -> list:
+    """Items of an open menu / list / pop-up whose name is the value."""
+    return [e for e in snap.elements if e.interactive and e.enabled and e.role in MENU_ITEM_ROLES
+            and _has(e.name(), value)]  # fmt: skip
+
+
+def _setting_holds(fact: Fact, snap: Snapshot) -> bool | None:
+    controls = setting_controls(snap, fact)
+    checked = [e for e in setting_items(snap, fact.data) if e.value.lower() in ("1", "true", "on") or e.selected]
+    if any(shows_value(e, fact.data) for e in controls) or checked:
+        return True
+    return False if controls else None
+
+
+def _setting_action(fact: Fact, snap: Snapshot | None) -> str:
+    if snap is not None:
+        if items := setting_items(snap, fact.data):
+            return f'choose "{items[0].name()}"'
+        if controls := setting_controls(snap, fact):
+            return f'click "{controls[0].name()}", then choose "{fact.data}"'
+    return f'set {fact.value} to "{fact.data}"'
+
+
+def without_settings(goal: str) -> str:
+    """The goal with its "set <setting> to <value>" phrases cut out (the setting facts cover them)."""
+    text = re.sub(r"[“”]", '"', goal)
+    for _, _, start, end in sorted(setting_matches(goal), key=lambda m: -m[2]):
+        text = text[:start] + " " + text[end:]
+    return text
+
+
+def _setting_facts(goal: str) -> list[Fact]:
+    return [Fact("setting", name, start, data=value) for name, value, start, _ in setting_matches(goal)]
+
+
 def _click_facts(goal: str, apps: list[str], facts: list[Fact]) -> list[Fact]:
     """`click` facts: the object of click / press / tap / play / open when it is not an app, a site, a file or a "new"
     thing the other facts already cover. They hold after a verified click that was chosen for that object (the loop)."""
@@ -234,10 +344,10 @@ def parse_facts(goal: str, apps: list[str] | None = None, progress: bool = False
 def new_facts(goal: str) -> list[Fact]:
     """`new` facts: the noun of "open a new conversation", "start a new chat", "new tab in Safari", "new document"."""
     found: dict[str, int] = {}
-    for rx in (NEW_VERB_RE, NEW_IN_RE):
+    for rx in (NEW_VERB_RE, NEW_IN_RE, NEW_BUTTON_RE):
         for m in rx.finditer(goal):
             noun = m.group(1).lower()
-            if noun not in NOT_NOUNS:
+            if noun not in NOT_NOUNS | NOT_NEW_NOUNS:
                 found.setdefault(noun, m.start())
     if (m := NEW_DOC_RE.search(goal)) and not {"document", "file"} & set(found):
         found[m.group(0).split()[-1].lower()] = m.start()
@@ -285,6 +395,7 @@ def _parse_facts(goal: str, apps: list[str]) -> list[Fact]:
     sites = _site_facts(goal, apps, found)
     searches = _search_facts(goal)
     tabs = _tab_facts(goal, apps)
+    facts += _setting_facts(goal)
     facts += [f for f in tabs if f not in facts]
     facts += sites + searches
     facts += _click_facts(goal, apps, facts)
@@ -401,6 +512,14 @@ def checkable_facts(facts: list[Fact], snap: Snapshot) -> list[Fact]:
     return [f for f in facts if snap.url or f.kind not in ("site", "search")]
 
 
+def empty_new_state(snap: Snapshot, noun: str) -> bool:
+    """Does the screen already show an empty new <noun>: the window is titled "New <noun>" / "Untitled", or the focused
+    editable field (a composer, a document) is empty?"""
+    if re.search(rf"\bnew\s+{re.escape(noun)}\b|\buntitled\b", snap.window_title or "", re.I):
+        return True
+    return any(e.focused and e.role in EDITABLE_ROLES and not e.value.strip() for e in snap.elements)
+
+
 def _holds(fact: Fact, snap: Snapshot, facts: list[Fact] | None = None, since: float | None = None) -> bool | None:
     """True / False, or None when the screen has no evidence either way (no editable text, no document window)."""
     if fact.kind == "app":
@@ -428,6 +547,8 @@ def _holds(fact: Fact, snap: Snapshot, facts: list[Fact] | None = None, since: f
     if fact.kind == "tab":
         title = snap.page_title or snap.window_title
         return tab_matches(fact.value, title, snap.url) if (title or snap.url) else None
+    if fact.kind == "setting":
+        return _setting_holds(fact, snap)
     if fact.kind == "new":
         if fact.value not in DOC_NOUNS:
             return None  # nothing on screen says a new conversation is open; the loop remembers its New click
@@ -459,6 +580,8 @@ def _says(fact: Fact) -> str:
         return f"a search for {fact.label()} done"
     if fact.kind == "tab":
         return f"the {fact.label()} tab in front"
+    if fact.kind == "setting":
+        return f'{fact.value} set to "{fact.data}"'
     return f"window titled {fact.label()}" if fact.kind == "saved" else f"{fact.label()} in text area"
 
 
@@ -488,6 +611,8 @@ def _action(fact: Fact, facts: list[Fact] | None = None, snap: Snapshot | None =
         return f'go to {fact.value}: click {field}, type "{domain}" and press return'
     if fact.kind == "tab":
         return f"switch to the open tab named {fact.label()}"
+    if fact.kind == "setting":
+        return _setting_action(fact, snap)
     if fact.kind == "search":
         field = search_field(snap) if snap is not None else None
         if field is not None:
@@ -531,7 +656,7 @@ def decisive_facts(goal: str, apps: list[str] | None = None) -> list[Fact]:
     if not facts:
         return []
     new = new_facts(goal)
-    rest = SEARCH_RE.sub(" ", SAVE_RE.sub(" ", goal))
+    rest = SEARCH_RE.sub(" ", SAVE_RE.sub(" ", without_settings(goal)))
     if any(f.kind == "tab" for f in facts):
         rest = re.sub(r"[\"“”‘’]", "", rest).replace(tab_phrase(goal), " ")  # "open my x tab": the tab fact covers it
     for f in facts:
@@ -566,7 +691,7 @@ def decisive_facts(goal: str, apps: list[str] | None = None) -> list[Fact]:
 def failing_facts(facts: list[Fact], snap: Snapshot, since: float | None = None, known: dict | None = None) -> str:
     """Why `facts` don't hold on `snap`, for the note on a rejected `done`."""
     why = {"new": "no new {} is open", "app": "{} isn't in front", "text": "{} isn't in any text field",
-           "site": "{} isn't the open page", "tab": "the {} tab isn't in front", "search": "the search for {} hasn't been done",
+           "site": "{} isn't the open page", "tab": "the {} tab isn't in front", "setting": "{} isn't set", "search": "the search for {} hasn't been done",
            "click": "{} hasn't been clicked", "outline": "{} isn't done", "field": "{} isn't filled in", "submit": "the form hasn't been submitted"}  # fmt: skip
     out = []
     for f, ok in zip(facts, resolve(facts, snap, since, known)):
@@ -610,7 +735,7 @@ def pending_fact(facts: list[Fact], snap: Snapshot, seen: set | None = None, sin
 
 def rest_of_goal(goal: str, facts: list[Fact]) -> str:
     """The goal minus the phrases its facts account for (app, site, search, new-thing, save and quoted text)."""
-    rest = SEARCH_RE.sub(" ", SAVE_RE.sub(" ", goal))
+    rest = SEARCH_RE.sub(" ", SAVE_RE.sub(" ", without_settings(goal)))
     if any(f.kind == "tab" for f in facts):
         rest = re.sub(r"[\"“”‘’]", "", rest).replace(tab_phrase(goal), " ")  # "open my x tab": the tab fact covers it
     for rx in (NEW_VERB_RE, NEW_IN_RE, NEW_DOC_RE):

@@ -435,6 +435,34 @@ def goal_state(goal: str, snap: Snapshot, view_tokens: int) -> str:
     return f"User goal: {goal}\nCurrent screen:\n{render(snap, view_tokens, numbered=False)}"
 
 
+def _gguf_class():
+    """jevk5's llama-server client with two changes: `cache_prompt` is sent as configured (jevk5 hard-codes False), so
+    llama-server reuses the KV of the prompt prefix its slot already holds (no extra RAM: that is what `--cache-ram 0`
+    leaves alone), and each call's `prompt_n` (tokens evaluated), `cache_n` (tokens reused) and server time are counted."""
+    from jevk5 import JevK5GGUF
+
+    class CachedGGUF(JevK5GGUF):
+        cache_prompt = True
+
+        def _logprobs(self, prompt: str):
+            tokens = self._post("/tokenize", {"content": prompt, "add_special": False, "parse_special": True})["tokens"]
+            out = self._post("/completion", {"prompt": tokens, "n_predict": 1, "n_probs": self.top_k, "temperature": 0,
+                                             "cache_prompt": self.cache_prompt})  # fmt: skip
+            top = out["completion_probabilities"][0]["top_logprobs"]
+            timings = out.get("timings") or {}
+            evaluated = timings.get("prompt_n", out.get("tokens_evaluated", 0))
+            seconds = (timings.get("prompt_ms", 0.0) + timings.get("predicted_ms", 0.0)) / 1000
+            stats = self.stats
+            stats["calls"] += 1
+            stats["prompt_n"] += evaluated
+            stats["cache_n"] += timings.get("cache_n", 0)
+            stats["server_s"] += seconds
+            return {e["token"]: e["logprob"] for e in top}, out.get("tokens_evaluated", evaluated), seconds
+
+    CachedGGUF.stats = {"calls": 0, "prompt_n": 0, "cache_n": 0, "server_s": 0.0}
+    return CachedGGUF
+
+
 class JevK5Client(JevClient):
     """JevK5 GGUF on a local llama-server, read with jevk5's own stdlib client (no torch).
 
@@ -443,16 +471,25 @@ class JevK5Client(JevClient):
     """
 
     def __init__(self, settings: Settings, model=None):
-        from jevk5 import JevK5GGUF
-
         self.settings = settings
         self.chunk_size = max(2, min(settings.jev_chunk_size, JEV_MAX_CHOICES))
-        self.model = model or JevK5GGUF(
+        self.model = model or _gguf_class()(
             url=settings.jevk5_url,
             temperature=settings.jevk5_temperature,
             knockout_temperature=settings.jevk5_knockout_temperature,
             timeout_s=settings.http_timeout_s,
         )
+        if hasattr(self.model, "cache_prompt"):
+            self.model.cache_prompt = settings.jev_cache_prompt
+
+    def take_stats(self) -> dict:
+        """Jev calls, prompt tokens evaluated / reused and server seconds since the last call of this method."""
+        stats = getattr(self.model, "stats", None)
+        if stats is None:
+            return {}
+        out = dict(stats)
+        stats.update(calls=0, prompt_n=0, cache_n=0, server_s=0.0)
+        return out
 
     def health(self) -> bool:
         try:

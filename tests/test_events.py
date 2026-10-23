@@ -219,3 +219,44 @@ def test_two_unsure_steps_end_the_run_with_an_unsure_reason(run_cli):
     assert r.exit_code == 1 and result["type"] == "result" and not result["success"]
     assert result["reason"] == "unsure: do it" and result["steps"] == 2
     assert result["history"][0]["note"].startswith("unsure (p=0.12)") and result["history"][0]["executed"] is False
+
+
+def test_events_carry_the_spoken_lines(run_cli):
+    r, ev = run_cli([P(action="shortcut", keys="cmd+s"), DONE])
+    record = next(e for e in ev if e["type"] == "record")
+    assert record["say"] == "Pressed Command S" and record["say_kind"] == "step"
+    result = ev[-1]
+    assert result["say"] == "Done" and result["say_kind"] == "done"
+
+
+def test_question_and_error_events_have_say(run_cli):
+    r, ev = run_cli([P(action="terminal", command="rm -r ~/old-builds"), DONE], stdin="n\n")
+    q = next(e for e in ev if e["type"] == "confirm_terminal")
+    assert q["say"] == "Should I run this command?" and q["say_kind"] == "question"
+    r, ev = run_cli([RuntimeError])
+    assert ev[-1]["say"] == "Something went wrong" and ev[-1]["say_kind"] == "problem"
+
+
+def test_dry_run_records_have_no_say(run_cli):
+    r, ev = run_cli([P(action="shortcut", keys="cmd+n")], "--dry-run")
+    assert "say" not in next(e for e in ev if e["type"] == "record")
+
+
+def test_speak_flag_calls_say_for_each_line(run_cli, monkeypatch):
+    spoken = []
+    class Quiet:
+        def poll(self):
+            return 0
+
+        def terminate(self):
+            pass
+
+    monkeypatch.setattr("subprocess.Popen", lambda cmd, *a, **k: spoken.append(cmd) or Quiet())
+    r, ev = run_cli([P(action="shortcut", keys="cmd+s"), DONE], "--speak")
+    assert [c[-1] for c in spoken] == ["Pressed Command S", "Done"] and spoken[0][:3] == ["say", "-r", "200"]
+
+
+def test_record_events_say_who_verified_and_how_long_settling_took(run_cli):
+    r, ev = run_cli([P(action="shortcut", keys="cmd+s"), DONE])
+    record = next(e for e in ev if e["type"] == "record")
+    assert record["verify_source"] in ("jev", "code") and "settle_s" in record

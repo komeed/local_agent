@@ -129,8 +129,20 @@ def test_a_control_named_with_a_goal_word_is_kept_beyond_the_cut():
     many = [button(100 + i, f"Simpsons clip {i} of the series", "AXWebArea") for i in range(20)]
     snap = arc()
     snap.elements = many + snap.elements
-    labels = [o.label for o in build_options("Open my simpsons tab on arc", {}, [], snap, None)]
+    labels = [o.label for o in build_options("Open my simpsons tab on arc", {}, [], snap, None, max_options=100)]
     assert sum("Simpsons" in l for l in labels) >= 21
+
+
+def test_the_option_list_is_cut_to_one_pass_keeping_the_important_ones():
+    many = [button(100 + i, f"Simpsons clip {i} of the series", "AXWebArea") for i in range(20)]
+    snap = arc()
+    snap.elements = many + snap.elements
+    scope = {"progress": {"done": [], "next": 'type "x" into the "Search" field, then press return', "remaining": []}}
+    options = build_options("Open my simpsons tab on arc", scope, [{"a": 1}] and [], snap, "5 more controls below", max_options=15)
+    labels = [o.label for o in options]
+    assert len(options) == 15 and len(set(labels)) == 15 and [o.key for o in options] == [f"o{i}" for i in range(15)]
+    assert "press return" in labels and labels[-1].startswith("none of these") and "scroll down" in labels
+    assert "press tab" not in labels and sum(l.startswith("click") for l in labels) == 9
 
 
 def test_the_outline_is_skipped_for_a_single_switch_goal():

@@ -346,6 +346,28 @@ def document_window(window):
     return parent if parent is not None and _str(_attr(parent, "AXRole")) == "AXWindow" else window
 
 
+def fingerprint():
+    """A cheap reading of the front window to see when an action has finished: the app, the window title and number of
+    children, and the focused element (role, title, a bit of its value). None when it can't be read; two equal
+    readings in a row mean the screen has settled."""
+    try:
+        app = frontmost_app()
+        app_el = AXUIElementCreateApplication(int(app.processIdentifier()))
+        window = _attr(app_el, "AXFocusedWindow") or _attr(app_el, "AXMainWindow")
+        focused = _attr(app_el, "AXFocusedUIElement")
+        kids = _attr(window, "AXChildren") if window is not None else None
+        return (
+            int(app.processIdentifier()),
+            _str(_attr(window, "AXTitle")) if window is not None else "",
+            len(kids) if kids is not None else -1,
+            (_str(_attr(focused, "AXRole")), _str(_attr(focused, "AXTitle")), _str(_attr(focused, "AXValue"))[:60])
+            if focused is not None else None,
+            len(_attr(app_el, "AXChildren") or []),  # open menus and popups hang off the application element
+        )
+    except Exception:  # noqa: BLE001 - any AX failure just means "settle by sleeping"
+        return None
+
+
 def snapshot(settings: Settings | None = None, include_menubar: bool = True) -> Snapshot:
     """Snapshot the focused window of the frontmost app (plus its menu bar and any open menus)."""
     settings = settings or Settings()

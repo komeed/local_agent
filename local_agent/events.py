@@ -8,6 +8,7 @@ import time
 from dataclasses import asdict
 from typing import IO, Callable
 
+from local_agent import speech
 from local_agent.history import StepRecord
 from local_agent.observe.models import UIElement
 from local_agent.planner.schema import PlannerOutput
@@ -101,8 +102,12 @@ def select_event(step: int, sel: Selection, select_s: float | None) -> dict:
     }
 
 
-def record_event(rec: StepRecord, verify_s: float | None, goal_s: float | None = None) -> dict:
-    return {**record_payload(rec), "verify_s": _secs(verify_s), "goal_s": _secs(goal_s)}
+def record_event(rec: StepRecord, verify_s: float | None, goal_s: float | None = None, jev: dict | None = None,
+                 settle_s: float | None = None) -> dict:
+    """`jev` is the step's Jev totals (calls, prompt_n evaluated, cache_n reused, server_s); omitted when empty."""
+    extra = {"jev": jev} if jev and jev.get("calls") else {}
+    return {**record_payload(rec), "verify_s": _secs(verify_s), "goal_s": _secs(goal_s), "settle_s": _secs(settle_s),
+            **extra, **speech.fields(speech.record_say(rec))}
 
 
 def result_event(success: bool, reason: str, history: list[StepRecord], elapsed_s: float) -> dict:
@@ -112,4 +117,5 @@ def result_event(success: bool, reason: str, history: list[StepRecord], elapsed_
         "steps": len(history),
         "elapsed_s": round(elapsed_s, 3),
         "history": [record_payload(r) for r in history],
+        **speech.fields(speech.result_say(success, reason, len(history))),
     }

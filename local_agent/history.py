@@ -21,6 +21,8 @@ class StepRecord:
     # Jev's probability that this step's terminal command was safe to run unasked (None: not checked / turbo).
     safety_probability: float | None = None
     note: str = ""  # error / skip reason / terminal output tail
+    # Who decided `verified`: "code" (evidence code saw), "jev", "heuristic" (cosine's word-overlap check); "" when no check ran.
+    verify_source: str = ""
 
     @property
     def succeeded(self) -> bool:
@@ -31,6 +33,7 @@ class StepRecord:
         for k in ("probability", "confidence", "verify_probability", "goal_probability", "safety_probability"):
             if k in d:
                 d[k] = round(d[k], 3)
+        d.pop("verify_source", None)  # for events and logs, not for the planner's prompt
         d["result"] = "success" if self.succeeded else "failed"
         return d
 

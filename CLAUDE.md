@@ -291,3 +291,19 @@ the planner returns `done`, `max_steps`, or `max_consecutive_failures`.
   always keeps controls named with one. `outline.single_action` covers "open/switch to … tab|window|page".
   `Settings.jev_min_pick_p` (0.3, `--jev-min-p`): a jev-mode pick below it that isn't `done` or the checklist's next
   line does nothing (`Unsure`); the first replans an outline, the second in a row ends the run `unsure: <goal item>`.
+- **Setting goals and New-without-change**: "select/set/choose/change <setting> (to|to be|as) <value>" is a `setting`
+  fact (`Fact.data` = value) that holds when a visible control named with the setting shows the value; the checklist
+  line reads `click "<control>", then choose "<value>"` (or `choose "<item>"` once the menu is open). A New click that
+  changes nothing counts as the `new` fact when the screen already shows an empty new state. Outline lines that
+  describe an existing fact share its done state instead of being judged separately.
+- **Spoken lines** (`local_agent/speech.py`): `record`, `confirm_terminal`, `result` and `error` events carry `say`
+  (≤ 60 chars, written by code from what happened; long typed text and sensitive fields become "Typed your text") and
+  `say_kind` (`step|question|problem|done`). `--speak` says them with macOS `say`; the LocalAgent app speaks them itself
+  (AVSpeechSynthesizer) and never passes `--speak`.
+- **Speed-ups (each a setting)**: `code_verify` (`_code_evidence`: typed text present, a fact flipped, window/URL
+  changed, menu or dialog opened, clicked control gone → `verify_source="code"`, no Jev call); `facts_only_goal_check`
+  (no Jev `goal_done` when facts cover the goal; else only after a step that changed the screen); `jev_max_options` (15,
+  one JevK5 pass); `event_settle` (`ax_tree.fingerprint` polled every 50 ms until stable 150 ms, capped at `settle_s`);
+  `jev_cache_prompt` (`cache_prompt`, `prompt_n`/`cache_n` in the record's `jev` field). Measure with
+  `python -m evals.step_timing --url http://127.0.0.1:8092` (it refuses 8091): median 1.81 → 1.43 s, p90 4.34 → 1.99 s
+  per synthetic step, jev accuracy unchanged (71%).

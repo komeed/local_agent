@@ -19,6 +19,7 @@ Executable: `<repo>/.venv/bin/local-agent` (created by `uv sync`). Run it with t
 |---|---|---|
 | `--app NAME` | Optional, no longer needed: the agent opens the app the goal needs itself (`open -a` terminal step). Only to force a starting app | none |
 | `--jev KEY` | Jev model from `jev list --json` | what llama-server serves |
+| `--speak` | Say each `say` line aloud with macOS `say` (see Spoken lines) | off |
 | `--turbo` (alias `--yes`) | Run every terminal command with no safety check and no `confirm_terminal` | off |
 | `--model NAME` | Ollama planner model | `qwen3.5:9b` |
 | `--view ids\|names\|off` | Planner screen view: numbered controls, names only, or none | `ids` |
@@ -149,6 +150,12 @@ declines it. Show `reason` to the user. Never sent with `--turbo` or `--dry-run`
 - Declined command: `"executed": false, "note": "user declined the terminal command"`.
 - Terminal output: `"note": "exit=0 output: 42"`.
 - Nullable: `element`, `probability`, `confidence`, `verified`, `verify_probability`, `verify_s`.
+- `verify_source` says who decided `verified`: `"code"` (the screen showed it: the typed text is in a field, a checklist fact
+  became true, the window or address changed, a menu or dialog opened, or the clicked control is gone; no model call,
+  `verify_probability` null and the note ends `verified in code: <why>`), `"jev"`, `"heuristic"` (cosine's word-overlap
+  check), or `""` when no check ran. `settle_s` is how long the step waited for the screen to settle (null if it didn't).
+- `jev` (only when Jev was called in the step; JevK5 backend): `{"calls": 2, "prompt_n": 812, "cache_n": 640, "server_s": 0.9}`,
+  the prompt tokens llama-server evaluated, the tokens it reused from the previous prompt (`cache_prompt`) and its own time.
 
 ### `result`
 ```json
@@ -173,6 +180,32 @@ step`, `unsure: <goal item>` (jev mode: two steps in a row where Jev's best opti
 process that launched the CLI); `CalledProcessError: …open…` (`open -a` failed, usually an app name that doesn't
 exist); `AccessibilityError: Could not bring … to the front` (another window kept focus). The traceback goes to
 stderr.
+
+### Spoken lines: `say` and `say_kind`
+
+`record`, `confirm_terminal`, `result` and `error` may carry two optional fields, written by code (`local_agent/speech.py`,
+no model) from what actually happened: `say`, a plain-English line of at most 60 characters with no ids or coordinates,
+and `say_kind`, one of `step`, `question`, `problem`, `done`. Apps that don't speak ignore them. Dry-run and skipped
+records have neither field; a cancelled `result` has none either. Private text is never spoken: typed text over 24
+characters, and anything typed into a password or card field, is "Typed your text".
+
+| Event | `say` (`say_kind`) |
+|---|---|
+| `record`, success | `Opened Claude`, `Clicked Model`, `Selected Sonnet 5.5` (a menu item), `Typed hello` (≤ 24 chars, else `Typed your text`), `Pressed Command S`, `Scrolled down`, `Switched to your simpsons tab`, `Opened youtube`, `Searched for dream`, `Chose Save As…`, `Ran a command` (`step`) |
+| `record`, failed or refused | `I couldn't find Export`, `That step didn't work`, `Blocked: that would close the app`, `I'm not sure what to click` (`problem`) |
+| `confirm_terminal` | `Should I replace helloworld.txt?`, `Should I submit the form?`, `Should I leave this page and lose changes?`, `Should I run this command?` (`question`) |
+| `result` | `Done` (`done`); `Stopped: you declined`, `I need Email, Phone to fill the form`, `I got stuck on <item>`, `Stopped after 20 steps` (`problem`) |
+| `error` | `Something went wrong` (`problem`) |
+
+Short names cut the element's name at the first `:`, ` - `, `•` or `(` and keep at most 4 words ("Model: Opus 5.5 High" is
+"Model", "The Simpsons - X" is "The Simpsons"); a chosen menu item keeps its full name.
+
+```json
+{"type": "record", "t": 5.1, "step": 2, "plan": "click [3] [AXButton] Model", "executed": true, "verified": true, "say": "Clicked Model", "say_kind": "step"}
+```
+
+`run --speak` (text or events mode, off by default) speaks each line with macOS `say -r 200` without blocking. A new
+`step` line stops a `step` line still being spoken; `question`, `problem` and `done` lines are never cut off by one.
 
 ## 4. `doctor --json`
 

@@ -105,6 +105,17 @@ class Settings:
     walk_timeout_s: float = 5.0
     # Seconds to wait after an action before re-observing.
     settle_s: float = 0.8
+    # Speed-ups (each can be switched off to measure it, evals/step_timing.py):
+    # skip Jev's verify when code sees the step took effect; leave the goal check to the facts when they cover the goal;
+    # settle native actions by polling an AX fingerprint (stable for settle_stable_s, at most settle_s) instead of sleeping;
+    # let llama-server reuse the KV of the prompt prefix it already has (cache_prompt).
+    code_verify: bool = True
+    facts_only_goal_check: bool = True
+    event_settle: bool = True
+    settle_poll_s: float = 0.05
+    settle_stable_s: float = 0.15
+    jev_cache_prompt: bool = True
+    jev_max_options: int = 15  # one JevK5 pass reads 16 options; jev mode offers at most this many
     http_timeout_s: float = 120.0
 
     @classmethod

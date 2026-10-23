@@ -265,6 +265,7 @@ def run(
         None, "--jev-min-p",
         help="Jev mode: don't act on an option Jev rates below this probability unless it is the checklist's next line (default 0.3; 0 = off).",
     ),
+    speak: bool = typer.Option(False, "--speak", help="Say each step, question and the result aloud (macOS `say`)."),
     log: Path | None = typer.Option(None, "--log", help="Write the step history as JSON here."),
     events: bool = typer.Option(
         False, "--events", help="Write JSON Lines events to stdout for apps (docs/APP_INTEGRATION.md); text goes to stderr."
@@ -278,6 +279,7 @@ def run(
     """Work toward GOAL on the frontmost window until done or out of steps."""
     from local_agent.act import executor
     from local_agent.loop import Agent, Hooks
+    from local_agent.observe.ax_tree import fingerprint as ax_tree_fingerprint
     from local_agent.observe.ax_tree import snapshot as take_snapshot
     from local_agent.planner.qwen import make_planner
     from local_agent.selector.jev import make_selector
@@ -300,11 +302,17 @@ def run(
 
         ev = ev_mod.EventWriter()
     step = 0  # current step, for confirm_terminal events
+    from local_agent import speech
+
+    speaker = speech.Speaker() if speak else None
 
     def confirm(cmd: str, why: str) -> bool:
         """Only reached for commands the safety check didn't clear (never in turbo mode)."""
+        if speaker:
+            speaker.speak(speech.question_say(cmd, why))
         if ev:
-            ev.emit("confirm_terminal", step=step, command=cmd, reason=why, safety_probability=agent.last_safety)
+            ev.emit("confirm_terminal", step=step, command=cmd, reason=why, safety_probability=agent.last_safety,
+                    **speech.fields(speech.question_say(cmd, why)))
             return sys.stdin.readline().strip().lower() in ("y", "yes")  # EOF reads "" → declined
         try:
             return typer.confirm(f"Run terminal command ({why}): {cmd}", default=False)
@@ -360,8 +368,12 @@ def run(
         out.print(f"[yellow]replan[/yellow] ({reason}) " + (" → ".join(items) if items else f"(rejected: {rejected})"))
 
     def on_record(rec):
+        if speaker:
+            speaker.speak(speech.record_say(rec))
         if ev:
-            ev.emit("record", **ev_mod.record_event(rec, agent.timing.get("verify_s"), agent.timing.get("goal_s")))
+            take = getattr(selector, "take_stats", None)
+            ev.emit("record", **ev_mod.record_event(rec, agent.timing.get("verify_s"), agent.timing.get("goal_s"),
+                                                    take() if take else None, agent.timing.get("settle_s")))
         color = {"ok": "green", "failed": "red"}.get(status(rec), "yellow")
         v = "" if rec.verify_probability is None else f" verify={rec.verify_probability:.2f}"
         v += "" if rec.goal_probability is None else f" goal={rec.goal_probability:.2f}"
@@ -372,6 +384,7 @@ def run(
         execute=executor.execute,
         settle_web=executor.settle_web,
         trusted_click=executor.trusted_click,
+        fingerprint=ax_tree_fingerprint,
         browser=browser_bridge(),
         run_menu=executor.run_menu,
         run_terminal=executor.run_terminal,
@@ -415,13 +428,17 @@ def run(
             raise typer.Exit(130)
         except Exception as e:  # anything else is a crash the app should show, not a traceback it can't parse
             out.print_exception()
-            ev.emit("error", message=f"{type(e).__name__}: {e}", kind=type(e).__name__)
+            ev.emit("error", message=f"{type(e).__name__}: {e}", kind=type(e).__name__, **speech.fields(speech.error_say()))
+            if speaker:
+                speaker.speak(speech.error_say())
             raise typer.Exit(2)
         ev.emit("result", **ev_mod.result_event(result.success, result.reason, result.history, ev.elapsed()))
     else:
         _prepare(app_name, delay)
         result = agent.run(goal)
 
+    if speaker:
+        speaker.speak(speech.result_say(result.success, result.reason, len(result.history)))
     if result.reason == "overwrite_declined":
         out.print("[yellow]The file already exists and you declined to replace it; nothing was overwritten.[/yellow]")
     table = Table("step", "plan", "element", "p", "result", title=f"{'✓' if result.success else '✗'} {result.reason}")
